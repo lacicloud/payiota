@@ -1,0 +1,87 @@
+/* http://www.jankoatwarpspeed.com/css-message-boxes-for-different-message-types/ */
+/* with knob_buttons_toolbar_icons_by_itweek */
+.info, .success, .warning, .error, .validation {
+    border: 1px solid rgba(0,0,0,0.3);
+	border-radius:2px;
+    margin: 5px 15px 20px 15px;
+    padding: 5px 10px;
+    width:100%;
+    background-repeat: no-repeat;
+    background-position: 10px center;
+    display: none;
+	color: rgba(25,25,25,0.85);
+}
+
+.info {
+    /*color: #00529B;*/
+    background-color: #BDE5F8;
+}
+
+.success {
+    /*color: #4F8A10;*/
+    background-color: #DFF2BF;
+}
+
+.warning {
+    /*color: #9F6000;*/
+    background-color: #FEEFB3;
+}
+
+.error {
+    /*color: #D8000C;*/
+    background-color: #FFBABA;
+}
+
+/* IOTA PAY LOGIN */
+
+.menu {
+    margin: 0;
+    padding: 0;
+}
+h1,h2,h3,h4,h5,h6 {font-family: 'Cabin', sans-serif;}
+body{font-family: 'Open Sans', sans-serif;}
+a, a:hover {text-decoration:none;}
+/* Login/Registration Forms*/
+.login_details {overflow-y:scroll;float:left;width: 40vw;height:100vh;}
+.login_details h1 {margin:10px 0px 20px 0px;font-size:30px;}
+.login_details .login_wrapper {padding:0px 15px;}
+.login_details .logo img {width:110px;padding:0px 5px;}
+.login_details .logo {display:block;margin-bottom:20px;border-bottom: 1px solid rgba(0,0,0,0.2);width:100%}
+.login_details .logo span {color:#555;border-left: 1px solid rgba(0,0,0,0.1);padding-left:13px;position:relative;top:2px;}
+.login_details input {border-radius:3px;border: 1px solid rgba(0,0,0,0.2);padding:10px 10px;width:100%;}
+.login_details input[type="submit"] {background:#555459;color:#fff;border: 1px solid rgba(0,0,0,0.2);width: 100%;padding:7px 15px;margin-bottom:10px;font-size:18px;font-weight: 900;cursor: pointer;text-shadow: 0 1px 1px rgba(0,0,0,.1);}
+
+.login_details .captcha_area img {border: 1px solid #777;border-radius:2px;height:60px;margin:15px 10px 5px 0px;display:inline-block;}
+.login_details .captcha_area a {color:#303030;vertical-align:middle;}
+.login_details .tos_agreement input {width:initial;}
+.login_details #myTab {margin:0px 0px 20px 0px;}
+
+/* Login Hero Banner Area */
+.login_hero {float:left;width: 60vw;height: 100vh;background:url('../resources/hero-2.jpg') no-repeat;background-size:cover;text-shadow:1px 1px 2px rgba(0,0,0,0.2);}
+.login_hero .menu ul {width: 100%;}
+.login_hero .menu li {display:inline-block;float:left;padding:10px;}
+.login_hero .menu li a {color:rgba(255,255,255,0.9);text-decoration:none;font-weight:bold;font-size:12px;text-transform:capitalize;}
+.login_hero #hero_text {clear:both;width:80%;margin:0 auto;text-align:center;color:#fff;font-size:1.3em;line-height:1.5em;position:relative;top:calc(50vh - 5rem)}
+.login_hero  h1 {font-size: calc(100vw / 23);line-height:1.2em;}
+
+
+
+/* RESPONSIVE MEDIA QUERIES*/
+@media (max-width: 768px) {
+/* Login Area - Responsive */
+.login_details {overflow-y:initial;}
+.login_hero {height: 50vh;}
+.login_hero #hero_text {font-size:1em;line-height:1.5em;position:relative;top:calc(25vh - 5rem);}
+.login_hero  h1 {line-height:1.2em;}
+}
+
+#logout {
+  position:absolute;
+  left:0;
+  top:0;
+}
+
+* {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
