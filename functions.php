@@ -19,8 +19,6 @@ set_exception_handler(function ($e) {
 	die(1);
 });
 
-//do something with ugly docs link
-
 class IOTAPaymentGateway {
 
 	public function setupDB() {
