@@ -19,6 +19,8 @@ set_exception_handler(function ($e) {
 	die(1);
 });
 
+//do something with ugly docs link
+
 class IOTAPaymentGateway {
 
 	public function setupDB() {
@@ -77,14 +79,10 @@ class IOTAPaymentGateway {
 		}
 
 		curl_close ($ch);
-		
-		$balance = @json_decode($result, true)["balances"];
-		
-		if ($balance) {
-			$balance = 0;
-			return $balance;
-		}
 
+		$balance = @json_decode($result, true)["balances"];
+		$balance = $balance[0];
+		
 		$balance = (int)$balance;
 		
 		return $balance;
@@ -403,6 +401,12 @@ public function getPaymentAccountValues($id) {
 
 		$count = $this->countInvoicesByID($realID);
 		$this->incrementInvoiceCount($realID, $count); 
+		
+		//include 0th address as well
+		if ($count = 0) {
+			$count = -1;
+		}
+
 		$address = $this->getNewAddress($seed, $count + 1); 
 
 		if ($address == "ERR_FATAL_3RD_PARTY") {
@@ -431,7 +435,7 @@ public function getPaymentAccountValues($id) {
 		$stmt->bindParam(":done", $done);
 		$stmt->execute();
 
-		$this->logEvent("ERR_OK", "Generated new payment with ID ".$id." with address ".$address);
+		$this->logEvent("ERR_OK", "Generated new payment with ID ".$realID." with address ".$address);
 		return json_encode(array($address, $price_iota));
 	}
 
