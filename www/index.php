@@ -28,7 +28,7 @@
               <a class="nav-link" href="mailto:support@payiota.me">Support</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="/docs">Documents</a>
+              <a class="nav-link" href="/docs/payiota_api_tutorial.pdf">Documents</a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="/account.php">Account</a>
@@ -47,13 +47,13 @@
           <hr class="intro-divider">
           <ul class="list-inline intro-social-buttons">
             <li class="list-inline-item">
-              <a href="/docs" class="btn btn-secondary btn-lg">
+              <a href="/docs/payiota_api_tutorial.pdf" class="btn btn-secondary btn-lg">
                 <i class="fa fa-file fa-fw"></i>
                 <span class="network-name">Docs</span>
               </a>
             </li>
             <li class="list-inline-item">
-              <a href="#" class="btn btn-secondary btn-lg">
+              <a href="https://github.com/lacicloud/payiota" class="btn btn-secondary btn-lg">
                 <i class="fa fa-github fa-fw"></i>
                 <span class="network-name">Github</span>
               </a>
@@ -172,11 +172,19 @@
           </li>
           <li class="footer-menu-divider list-inline-item">&sdot;</li>
           <li class="list-inline-item">
-            <a href="/docs">Documents</a>
+            <a href="/docs/payiota_api_tutorial.pdf">Documents</a>
           </li>
           <li class="footer-menu-divider list-inline-item">&sdot;</li>
           <li class="list-inline-item">
             <a href="/account.php">Account</a>
+          </li>
+          <li class="footer-menu-divider list-inline-item">&sdot;</li>
+          <li class="list-inline-item">
+            <a href="/docs/payiota_legal.pdf">Legal</a>
+          </li>
+            <li class="footer-menu-divider list-inline-item">&sdot;</li>
+          <li class="list-inline-item">
+            <a href="/humans.txt">Owners</a>
           </li>
         </ul>
         <p class="copyright text-muted small">Copyright &copy; PayIOTA 2017. All Rights Reserved</p>

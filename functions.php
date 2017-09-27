@@ -19,6 +19,8 @@ set_exception_handler(function ($e) {
 	die(1);
 });
 
+ini_set('display_errors', 0); 
+
 class IOTAPaymentGateway {
 
 	public function setupDB() {
@@ -401,7 +403,7 @@ public function getPaymentAccountValues($id) {
 		$this->incrementInvoiceCount($realID, $count); 
 		
 		//include 0th address as well
-		if ($count = 0) {
+		if ($count == 0) {
 			$count = -1;
 		}
 
