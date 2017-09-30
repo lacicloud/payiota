@@ -3,7 +3,7 @@ require("libs/simple_html_dom.php");
 require("libs/SwiftMailer/lib/swift_required.php");
 
 define('ROOT', dirname(__FILE__));
-define('SALT', "TIMMKEEZTV");
+define('SALT', "12345678");
 define("EMAIL_USERNAME", "username");
 define("EMAIL_PASSWORD", "password");
 define("MYSQL_USERNAME", "username");
