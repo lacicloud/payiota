@@ -50,7 +50,7 @@ if (isset($_POST["email"]) and isset($_POST["password"]) and isset($_POST["passw
 		<div class="row">
 			<div class="col-md-7 col-12 login_hero" style="background:url('resources/hero-<?php echo rand(1,5);?>.jpg'); background-size: cover;">
 				<ul class="menu hero_menu">
-					<li><a href="/docs">Read the docs</a></li>
+					<li><a href="/docs/payiota_api_tutorial.pdf">Read the docs</a></li>
 					<li><a href="account.php?register">Sign-up</a></li>
 					<li><a href="account.php">Log-in</a></li>
 				</ul>
@@ -92,7 +92,7 @@ if (isset($_POST["email"]) and isset($_POST["password"]) and isset($_POST["passw
 						</div>
 						<input type="submit" value="Sign in"> 
 					</form>
-					<a href="mailto:support@payiota.me">Forgot password?</a>
+					<a onclick="alert('Please contact support@payiota.me to reset your password!')" href="#">Forgot password?</a>
 				  </div>
 				  <div class="tab-pane fade" id="register" role="tabpanel" aria-labelledby="register-tab">
 					<form action="#" method="POST" onsubmit="return ValidateRegister(this);">
@@ -119,8 +119,8 @@ if (isset($_POST["email"]) and isset($_POST["password"]) and isset($_POST["passw
 						  
 						<div class="form-check tos_agreement">
 						  <label>
-							<input required type="checkbox" name="checkbox" value=""/>
-							I agree to the <a href="/resources/payiota_legal.pdf" target="_blank">Terms and Conditions</a>
+							<input required type="checkbox" name="checkbox" id="terms_and_conditions_checkbox" value=""/>
+							I agree to the <a href="/docs/payiota_legal.pdf" target="_blank">Terms and Conditions</a>
 						  </label>
 						</div>
 						<input type="submit" value="Register My Account"></li>  
