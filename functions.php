@@ -14,7 +14,7 @@ ignore_user_abort(true);
 
 set_exception_handler(function ($e) {
 	chdir(ROOT);
-	error_log("Unhandled exception occured: ".print_r($e, true), 3, "logs/payiota.log");
+	error_log("Unhandled exception occured: ".$e, 3, "logs/payiota.log");
 	echo "Sorry, a fatal error has occured, service is unavailable!";
 	die(1);
 });
@@ -45,7 +45,7 @@ class IOTAPaymentGateway {
 		$output = trim(shell_exec("python scripts/iota_address_generator.py ".$seed." ".$count));
 
 		if ($output == "") {
-			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal lightnode failure while generating new address: ".print_r($output, true));
+			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal lightnode failure while generating new address: ".$output);
 			return "ERR_FATAL_3RD_PARTY";
 		}
 
@@ -74,7 +74,7 @@ class IOTAPaymentGateway {
 
 		$result = curl_exec($ch);
 		if (curl_errno($ch)) {
-			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal lightnode failure while getting balance: ".print_r($result, true));
+			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal lightnode failure while getting balance: ".$result);
 		    return "ERR_FATAL_3RD_PARTY";
 		}
 
@@ -334,7 +334,7 @@ public function getPaymentAccountValues($id) {
 		$data = file_get_contents("https://api.coinmarketcap.com/v1/ticker/iota/");
 
 		if (!$data) {
-			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal CMP error: ".print_r($data, true));
+			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal CMP error: ".$data);
 			return "ERR_FATAL_3RD_PARTY";
 		}
 
@@ -473,11 +473,9 @@ public function getPaymentAccountValues($id) {
 
 		$data = $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC);
 
-		$this->logEvent("ERR_OK", "Began checking addresses...");
 		foreach ($data as $key => $value) {
 			$this->checkAddress($value[0]);
 		}
-		$this->logEvent("ERR_OK", "Address check complete!");
 
 	}
 
