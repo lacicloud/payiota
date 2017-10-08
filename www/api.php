@@ -9,7 +9,7 @@ if (isset($_POST["api_key"])) {
 		echo "ERR_API_KEY_INVALID";
 		die(0);
 	} else {
-		if ($_POST["action"] == "new") {
+		if (@$_POST["action"] == "new") {
 			$price = $_POST["price"];
 
 			if (!is_numeric($price)) {
@@ -24,8 +24,12 @@ if (isset($_POST["api_key"])) {
 				die(0);
 			}
 
+			if (isset($_POST["currency"]) and $_POST["currency"] !== "USD") {
+					$price = $api->convertCurrency($price, $_POST["currency"], "USD");
+			}
+
 			echo ($api->addPaymentToServer($id, $price, $custom));
-		} elseif ($_POST["action"] == "update") {
+		} elseif (@$_POST["action"] == "update") {
 
 			$address = $_POST["address"];
 			$verification = $_POST["verification"];
@@ -37,7 +41,8 @@ if (isset($_POST["api_key"])) {
 
 			echo ($api->updatePriceForAddress($address, $verification, $id));
 
-
+		} else {
+			echo "ERR_PARAMETERS_MISSING";
 		}
 
 	}

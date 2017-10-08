@@ -328,6 +328,37 @@ public function getPaymentAccountValues($id) {
 		return key(array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
 	}
 
+	public function convertCurrency($amount, $from, $to) {
+			
+			if ($from == "IOTA") {
+					return $this->getUSDPrice($amount);
+			}
+
+			$url  = "https://finance.google.com/finance/converter?a=$amount&from=$from&to=$to";
+			$data = file_get_contents($url);
+			preg_match("/<span class=bld>(.*)<\/span>/",$data, $converted);
+			$converted = preg_replace("/[^0-9.]/", "", $converted[1]);
+			return round($converted, 3);
+	}
+
+	public function getUSDPrice($iota) {
+
+		$convert_miota = $iota / 1000000;
+		$curl = curl_init();
+		curl_setopt_array($curl, array(
+		    CURLOPT_RETURNTRANSFER => 1,
+		    CURLOPT_URL => 'https://api.coinmarketcap.com/v1/ticker/iota/',
+		));
+		$data = curl_exec($curl);
+		curl_close($curl);
+		$data = json_decode($data, true);
+		$price_usd = (double)$data[0]["price_usd"];
+		$price_in_usd = $price_usd * $convert_miota;
+
+		return $price_in_usd;
+
+	}
+
 	public function getIOTAPrice($price) {
 		//to get it in number of million IOTAS, divide price by miota price, then round MIOTA
 		//to get it in IOTA, multiply MIOTA by million
