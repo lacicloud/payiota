@@ -10,6 +10,7 @@ $custom = "";
 $request = array(
 	"api_key" => PAYIOTA_API_KEY
 	"price" => $price,
+	"currency" => "USD",
 	"custom" => $custom,
 	"action" => "new"
 	);
