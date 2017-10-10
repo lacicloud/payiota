@@ -22,6 +22,55 @@ set_exception_handler(function ($e) {
 ini_set('display_errors', 0); 
 
 class IOTAPaymentGateway {
+	
+	public function getWorkingNode() {
+		$nodes = array(
+			"http://iota.bitfinex.com", //port 80
+			"http://service.iotasupport.com:14265",
+			"http://eugene.iota.community:14265",
+			"http://eugene.iotasupport.com:14999",
+			"http://eugeneoldisoft.iotasupport.com:14265",
+			"http://node01.iotatoken.nl:14265",
+			"http://node02.iotatoken.nl:14265"
+			);
+
+		foreach ($nodes as $key => $value) {
+			if ($this->isNodeOnline($value)) {
+				$working = $value;
+				break;
+			}
+		}
+
+		if (!isset($working)) {
+			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal, no nodes are working: ".$working);
+		} else {
+			return $working;
+		}
+
+	}
+
+	function isNodeOnline($url)
+	{
+		//knock knock
+	    $ch = curl_init($url);
+	    curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,10);
+	    curl_setopt($ch,CURLOPT_HEADER,true);
+	    curl_setopt($ch,CURLOPT_NOBODY,true);
+	    curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
+
+	    //who's there
+	    $response = curl_exec($ch);
+
+	    curl_close($ch);
+
+	    //error
+	    if (!$response) {
+	    	return false;
+	    }
+
+	    //else OK
+	    return true;
+	}
 
 	public function setupDB() {
 		$db =  $this->getDB();
@@ -59,7 +108,7 @@ class IOTAPaymentGateway {
 	}
 
 	public function getAddressBalance($address) {
-		$url = "http://iota.bitfinex.com/";
+		$url = $this->getWorkingNode();
 
 		$ch = curl_init();
 
