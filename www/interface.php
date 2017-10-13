@@ -95,6 +95,7 @@ echo "Total balance: ".$total_balance."<br>";
       <th>Price (USD)</th>
       <th>Price in IOTA</th>
       <th>Custom Variable</th>
+      <th>Balance</th>
       <th>Status</th>
     </tr>
   </thead>
@@ -105,10 +106,11 @@ echo "Total balance: ".$total_balance."<br>";
 		echo "
 		<tr>
 		  <th scope='row'>".$count."</th>
-		  <td>".$value[0]["address"]."</td>
+		  <td><a href='https://iotasear.ch/hash/".$value[0]["address"]."' target='_blank'>".$value[0]["address"]."</a></td>
 		  <td>$".$value[0]["price"]."</td>
 		  <td>".$value[0]["price_iota"]."</td>
 		  <td>".$value[0]["custom"]."</td>
+		  <td>".$api->getAddressBalance($value[0]["address"])."</td>
 		  <td>".$value[0]["done"]."</td>
 		</tr>";
 		$count++;

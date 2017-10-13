@@ -8,6 +8,16 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
+    <style>
+      .img-fix {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 75% !important;
+      }
+
+    </style>
+
     <title>PayIOTA - Landing Page</title>
     <?php include('header.php'); ?>
 
@@ -28,7 +38,7 @@
               <a class="nav-link" href="mailto:support@payiota.me">Support</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="/docs/payiota_api_tutorial.pdf">Documents</a>
+              <a class="nav-link" href="https://github.com/lacicloud/payiota/wiki/PayIOTA-API-Documentation">Documents</a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="/account.php">Account</a>
@@ -47,7 +57,7 @@
           <hr class="intro-divider">
           <ul class="list-inline intro-social-buttons">
             <li class="list-inline-item">
-              <a href="/docs/payiota_api_tutorial.pdf" class="btn btn-secondary btn-lg">
+              <a href="https://github.com/lacicloud/payiota/wiki/PayIOTA-API-Documentation" class="btn btn-secondary btn-lg">
                 <i class="fa fa-file fa-fw"></i>
                 <span class="network-name">Docs</span>
               </a>
@@ -56,6 +66,12 @@
               <a href="https://github.com/lacicloud/payiota" class="btn btn-secondary btn-lg">
                 <i class="fa fa-github fa-fw"></i>
                 <span class="network-name">Github</span>
+              </a>
+            </li>
+            <li class="list-inline-item">
+              <a href="https://github.com/lacicloud/payiota-woocommerce/" class="btn btn-secondary btn-lg">
+                <i class="fa fa-wordpress fa-fw"></i>
+                <span class="network-name">WooCommerce</span>
               </a>
             </li>
             <li class="list-inline-item">
@@ -81,7 +97,7 @@
             <p class="lead">IOTA is a cryptocurrency based on a revolutionary new blockchain called the tangle, and is completely without fees. It is the currency of the future and of IOT.</p>
           </div>
           <div class="col-lg-5 mr-auto">
-            <img class="img-fluid" src="resources/iota_logo.png" alt="">
+            <img class="img-fluid img-fix" src="resources/payiota_icon.png" alt="">
           </div>
         </div>
 
@@ -101,7 +117,7 @@
             <p class="lead">Helps web merchants accept IOTA payments easy on their website. We have no fees, unlike other payment gateways. We have a simple API that you can integrate into your system.</p>
           </div>
           <div class="col-lg-5 ml-auto order-lg-1">
-            <img class="img-fluid" src="resources/share_logo.png" alt="">
+            <img class="img-fluid img-fix" src="resources/share_logo.png" alt="">
           </div>
         </div>
 
@@ -123,7 +139,7 @@
             <p class="lead">We have free email support for integrating your system with us, at support@payiota.me!</p>
           </div>
           <div class="col-lg-5 mr-auto ">
-            <img class="img-fluid" src="resources/email_logo.png" alt="">
+            <img class="img-fluid img-fix" src="resources/email_logo.png" alt="">
           </div>
         </div>
 
@@ -172,7 +188,7 @@
           </li>
           <li class="footer-menu-divider list-inline-item">&sdot;</li>
           <li class="list-inline-item">
-            <a href="/docs/payiota_api_tutorial.pdf">Documents</a>
+            <a href="https://github.com/lacicloud/payiota/wiki/PayIOTA-API-Documentation">Documents</a>
           </li>
           <li class="footer-menu-divider list-inline-item">&sdot;</li>
           <li class="list-inline-item">
