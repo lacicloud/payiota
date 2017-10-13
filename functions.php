@@ -635,6 +635,8 @@ public function getPaymentAccountValues($id) {
 		curl_setopt($ch,CURLOPT_URL, $data["ipn_url"]);
 		curl_setopt($ch,CURLOPT_POST, 1);
 		curl_setopt($ch,CURLOPT_POSTFIELDS, $post_data);
+		curl_setopt($ch, CURLOPT_REFERER, 'https://payiota.me');
+		curl_setopt($ch, CURLOPT_USERAGENT, 'PayIOTA IPN'); 
 		$result = curl_exec($ch);
 		
 		curl_close($ch);
