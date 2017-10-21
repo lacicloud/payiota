@@ -589,8 +589,6 @@ public function getPaymentAccountValues($id) {
 			return;
 		}
 
-		die(0);
-
 		$balance = $this->getAddressBalance($address);
 
 		if ($balance > $price_iota or $balance == $price_iota) {
