@@ -22,7 +22,7 @@ set_exception_handler(function ($e) {
 ini_set('display_errors', 0); 
 
 class IOTAPaymentGateway {
-	
+
 	public function getWorkingNode() {
 		$nodes = array(
 			"http://iota.bitfinex.com", //port 80
@@ -53,7 +53,7 @@ class IOTAPaymentGateway {
 	{
 		//knock knock
 	    $ch = curl_init($url);
-	    curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,10);
+	    curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 3);
 	    curl_setopt($ch,CURLOPT_HEADER,true);
 	    curl_setopt($ch,CURLOPT_NOBODY,true);
 	    curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
@@ -79,7 +79,7 @@ class IOTAPaymentGateway {
 		$statement = $db->prepare($sql);
 		$statement->execute();
 
-		$sql ='CREATE TABLE payments (id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, address TEXT, realID INTEGER, price INTEGER, price_iota INTEGER, custom TEXT, ipn_url TEXT, verification TEXT, done INTEGER)';
+		$sql ='CREATE TABLE payments (id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, address TEXT, realID INTEGER, price INTEGER, price_iota INTEGER, custom TEXT, ipn_url TEXT, verification TEXT, done INTEGER, created INTEGER)';
 		$statement = $db->prepare($sql);
 		$statement->execute();
 	}
@@ -94,7 +94,7 @@ class IOTAPaymentGateway {
 		$output = trim(shell_exec("python scripts/iota_address_generator.py ".$seed." ".$count));
 
 		if ($output == "") {
-			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal lightnode failure while generating new address: ".$output);
+			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal lightnode failure while generating new address: Empty output");
 			return "ERR_FATAL_3RD_PARTY";
 		}
 
@@ -473,12 +473,16 @@ public function getPaymentAccountValues($id) {
 
 	}
 
-	public function addPaymentToServer($realID, $price, $custom) {
+	public function addPaymentToServer($realID, $price, $custom, $ipn_url) {
 		$data = $this->getAccountValues($realID);
 		$seed = $data["seed"];
 		$verification = $data["verification"];
-		$ipn_url = $data["ipn_url"];
 
+		if ($ipn_url == "" or filter_var($ipn_url, FILTER_VALIDATE_URL) == false) {
+			//use default IPN url
+			$ipn_url = $data["ipn_url"];
+		} 
+		
 		$count = $this->countInvoicesByID($realID);
 		$this->incrementInvoiceCount($realID, $count); 
 		
@@ -499,12 +503,11 @@ public function getPaymentAccountValues($id) {
 		}
 
 		$done = 0;
-
+		$created = time();
 
 		$db = $this->getDB();
-		$sql = "INSERT INTO payments (realID, address, price, price_iota, custom, ipn_url, verification, done) VALUES (:id, :address, :price, :price_iota, :custom, :ipn_url, :verification, :done)";
+		$sql = "INSERT INTO payments (realID, address, price, price_iota, custom, ipn_url, verification, done, created) VALUES (:id, :address, :price, :price_iota, :custom, :ipn_url, :verification, :done, :created)";
 		$stmt = $db->prepare($sql);
-		//print_r($db->errorInfo());
 		$stmt->bindParam(":id", $realID);
 		$stmt->bindParam(":address", $address);
 		$stmt->bindParam(":price", $price);
@@ -513,6 +516,7 @@ public function getPaymentAccountValues($id) {
 		$stmt->bindParam(":ipn_url", $ipn_url);
 		$stmt->bindParam(":verification", $verification);
 		$stmt->bindParam(":done", $done);
+		$stmt->bindParam(":created", $created);
 		$stmt->execute();
 
 		$this->logEvent("ERR_OK", "Generated new payment with ID ".$realID." with address ".$address);
@@ -574,6 +578,19 @@ public function getPaymentAccountValues($id) {
 	public function checkAddress($data) {
 		$address = $data["address"];
 		$price_iota = $data["price_iota"];
+
+		//check time (invoices can last a maximum of 1 week)
+		$created = $data["created"];
+		$current = time();
+
+		$difference = $current - $created;
+
+		if ($difference > 630427) {
+			return;
+		}
+
+		die(0);
+
 		$balance = $this->getAddressBalance($address);
 
 		if ($balance > $price_iota or $balance == $price_iota) {
