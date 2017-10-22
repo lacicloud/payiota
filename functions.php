@@ -482,6 +482,12 @@ public function getPaymentAccountValues($id) {
 			//use default IPN url
 			$ipn_url = $data["ipn_url"];
 		} 
+
+		//no default IPN url was set and no custom IPN url was specified
+		if ($ipn_url == "") {
+			echo "ERR_IPN_URL_INVALID";
+			die(0);
+		}
 		
 		$count = $this->countInvoicesByID($realID);
 		$this->incrementInvoiceCount($realID, $count); 
@@ -580,7 +586,7 @@ public function getPaymentAccountValues($id) {
 		$price_iota = $data["price_iota"];
 
 		//check time (invoices can last a maximum of 1 week)
-		$created = $data["created"];
+		$created = (int)$data["created"];
 		$current = time();
 
 		$difference = $current - $created;
