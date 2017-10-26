@@ -119,6 +119,7 @@ class IOTAPaymentGateway {
 
 		$headers = array();
 		$headers[] = "Content-Type: application/json";
+		$headers[] = "X-IOTA-API-Version: ANY";
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
 		$result = curl_exec($ch);
