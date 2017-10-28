@@ -161,7 +161,7 @@ class IOTAPaymentGateway {
 		foreach ($data as $key => $value) {
 			$count = 0;
 
-			for ($i = 1; $i <= 10; $i++) { 
+			for ($i = 1; $i <= 50; $i++) { 
 				$id = $key;
 				$seed = $value[0]["seed"];
 
@@ -180,14 +180,14 @@ class IOTAPaymentGateway {
 						$count = $count + 1;
 					}
 
-					//check whether generation is needed (10 address difference needed, then it generates 10 addresses)
+					//check whether generation is needed (10 address difference needed, then it generates 50 addresses)
 					$count_user = $this->countInvoicesByID($id);
 					$difference = ($count - $count_user);
 
 					if ($difference > 10 or $difference == 10) {
 						$stop = true;
 					} else {
-						$this->logEvent("ERR_OK", "Will pregenerate 10 new addresses for user ".$id." because difference is ".$difference."!");
+						$this->logEvent("ERR_OK", "Will pregenerate 50 new addresses for user ".$id." because difference is ".$difference."!");
 						$stop = false;
 					}
 
