@@ -20,6 +20,8 @@
 
     <title>PayIOTA - Landing Page</title>
     <?php include('header.php'); ?>
+	
+	<meta property="og:image" content="https://payiota.me/resources/payiota_icon.png"/>
 
   </head>
 
