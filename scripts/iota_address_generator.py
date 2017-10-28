@@ -45,7 +45,9 @@ def address_checksum(address):
     address = str(addy.with_valid_checksum())
     return address
 
-uri = "http://iota.bitfinex.com/"
+#bitfinex uses cloudflare which blocks many requests; blocking may get triggered at address pregeneration
+#uri = "http://iota.bitfinex.com/"
+uri = "http://node01.iotatoken.nl:14265/"
 index = int(sys.argv[2])
 count = None
 seed =  sys.argv[1]
@@ -54,3 +56,4 @@ api = Iota(uri, seed)
 api_response = api.get_new_addresses(index, count)
 for addy in api_response['addresses']:
     print(address_checksum(binary_type(addy).decode('ascii')))
+    #print(binary_type(addy).decode('ascii'))

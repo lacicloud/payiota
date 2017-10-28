@@ -54,8 +54,8 @@ class IOTAPaymentGateway {
 		//knock knock
 	    $ch = curl_init($url);
 	    curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 3);
-	    curl_setopt($ch,CURLOPT_HEADER,true);
-	    curl_setopt($ch,CURLOPT_NOBODY,true);
+	    curl_setopt($ch,CURLOPT_HEADER, false);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 	    curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
 
 	    //who's there
@@ -65,6 +65,10 @@ class IOTAPaymentGateway {
 
 	    //error
 	    if (!$response) {
+	    	return false;
+	    }
+
+	    if ($response !== '{"error":"Invalid API Version","duration":0}') {
 	    	return false;
 	    }
 
@@ -80,6 +84,10 @@ class IOTAPaymentGateway {
 		$statement->execute();
 
 		$sql ='CREATE TABLE payments (id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, address TEXT, realID INTEGER, price INTEGER, price_iota INTEGER, custom TEXT, ipn_url TEXT, verification TEXT, done INTEGER, created INTEGER)';
+		$statement = $db->prepare($sql);
+		$statement->execute();
+
+		$sql ='CREATE TABLE pregeneration (id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, realID INTEGER, address TEXT, position INTEGER)';
 		$statement = $db->prepare($sql);
 		$statement->execute();
 	}
@@ -105,6 +113,108 @@ class IOTAPaymentGateway {
 		chdir(ROOT);
 		$output = trim(shell_exec("python scripts/iota_seed_generator.py"));
 		return $output;
+	}
+
+	public function provideNewAddress($id, $seed, $count) {
+		//1. Get from pregenerated table if it is in there
+		//2. Generate now, add to DB
+		$db = $this->getDB();
+		$sql = "SELECT address FROM pregeneration WHERE realID = :realID and position = :position";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(':realID', $id);
+		$stmt->bindParam(':position', $count);
+		$stmt->execute();
+
+		$address = key(array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
+
+		if (!is_null($address)) {
+			return $address;
+		} else {
+			$address = $this->getNewAddress($seed, $count);
+
+
+			if ($address == "ERR_FATAL_3RD_PARTY") {
+				return "ERR_FATAL_3RD_PARTY";
+			}
+
+			$sql = "INSERT IGNORE INTO pregeneration (realID, address, position) VALUES (:realID, :address, :position)";
+			$stmt = $db->prepare($sql);
+			$stmt->bindParam(':realID', $id);
+			$stmt->bindParam(':address', $address);
+			$stmt->bindParam(':position', $count);
+			$stmt->execute();
+
+			return $address;
+		}
+
+
+	}
+
+	public function generateAddresses() {
+		$db = $this->getDB();
+		$sql = "SELECT id, seed FROM users";
+		$stmt = $db->prepare($sql);
+		$stmt->execute();
+
+		$data = $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC);
+		
+		foreach ($data as $key => $value) {
+			$count = 0;
+
+			for ($i = 1; $i <= 10; $i++) { 
+				$id = $key;
+				$seed = $value[0]["seed"];
+
+				//continue where left off
+				if ($count == 0) {
+					$sql = "SELECT position FROM pregeneration WHERE realID = :realID";
+					$stmt = $db->prepare($sql);
+					$stmt->bindParam(':realID', $id);
+					$stmt->execute();
+					$data = $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC);
+
+					if (empty($data)) {
+						$count = 0;
+					} else {
+						$count = key( array_slice( $data, -1, 1, TRUE ) );
+						$count = $count + 1;
+					}
+
+					//check whether generation is needed (10 address difference needed, then it generates 10 addresses)
+					$count_user = $this->countInvoicesByID($id);
+					$difference = ($count - $count_user);
+
+					if ($difference > 10 or $difference == 10) {
+						$stop = true;
+					} else {
+						$this->logEvent("ERR_OK", "Will pregenerate 10 new addresses for user ".$id." because difference is ".$difference."!");
+						$stop = false;
+					}
+
+				}
+
+				if ($stop == true) {
+					continue;
+				}
+
+
+			
+				$address = $this->getNewAddress($seed, $count);
+
+				//insert address into DB
+				$sql = "INSERT IGNORE INTO pregeneration (realID, address, position) VALUES (:realID, :address, :position)";
+				$stmt = $db->prepare($sql);
+				$stmt->bindParam(':realID', $id);
+				$stmt->bindParam(':address', $address);
+				$stmt->bindParam(':position', $count);
+				$stmt->execute();
+
+				$count++;
+				
+	
+			}
+	
+		}
 	}
 
 	public function getAddressBalance($address) {
@@ -343,30 +453,30 @@ class IOTAPaymentGateway {
 	}
 }
 
-public function getNewVerificationEmailString() {
-	return bin2hex(openssl_random_pseudo_bytes(64));
-}
+	public function getNewVerificationEmailString() {
+		return bin2hex(openssl_random_pseudo_bytes(64));
+	}
 
-public function getAccountValues($id) {
-	$db = $this->getDB();
-	$sql = "SELECT * FROM users WHERE id = :id";
-	$stmt = $db->prepare($sql);
-	$stmt->bindParam(":id", $id);
-	$stmt->execute();
-
-	//flatten user array
-	return call_user_func_array('array_merge', array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
-}
-
-public function getPaymentAccountValues($id) {
-	$db = $this->getDB();
-		$sql = "SELECT * FROM payments WHERE realID = :id";
+	public function getAccountValues($id) {
+		$db = $this->getDB();
+		$sql = "SELECT * FROM users WHERE id = :id";
 		$stmt = $db->prepare($sql);
 		$stmt->bindParam(":id", $id);
 		$stmt->execute();
 
-		return $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC);
+		//flatten user array
+		return call_user_func_array('array_merge', array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
 	}
+
+	public function getPaymentAccountValues($id) {
+		$db = $this->getDB();
+			$sql = "SELECT * FROM payments WHERE realID = :id";
+			$stmt = $db->prepare($sql);
+			$stmt->bindParam(":id", $id);
+			$stmt->execute();
+
+			return $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC);
+		}
 
 	public function matchAPItoID($api_key) {
 		$db = $this->getDB();
@@ -489,16 +599,18 @@ public function getPaymentAccountValues($id) {
 			echo "ERR_IPN_URL_INVALID";
 			die(0);
 		}
-		
-		$count = $this->countInvoicesByID($realID);
-		$this->incrementInvoiceCount($realID, $count); 
-		
-		//include 0th address as well
-		if ($count == 0) {
-			$count = -1;
-		}
 
-		$address = $this->getNewAddress($seed, $count + 1); 
+		//make sure nodes are online
+		$this->getWorkingNode();
+
+
+		$count = $this->countInvoicesByID($realID);
+		
+		//old system
+		//$address = $this->getNewAddress($seed, $count + 1);
+		//$address = $this->getNewAddress($seed, $count);
+		
+		$address = $this->provideNewAddress($realID, $seed, $count);
 
 		if ($address == "ERR_FATAL_3RD_PARTY") {
 			return "ERR_FATAL_3RD_PARTY";
@@ -508,6 +620,8 @@ public function getPaymentAccountValues($id) {
 		if ($price_iota == "ERR_FATAL_3RD_PARTY") {
 			return "ERR_FATAL_3RD_PARTY";
 		}
+
+		$this->incrementInvoiceCount($realID, $count); 
 
 		$done = 0;
 		$created = time();
