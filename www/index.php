@@ -20,8 +20,8 @@
 
     <title>PayIOTA - Landing Page</title>
     <?php include('header.php'); ?>
-	
-	<meta property="og:image" content="https://payiota.me/resources/payiota_icon.png"/>
+
+    <meta property="og:image" content="https://payiota.me/resources/payiota_icon.png"/>
 
   </head>
 
@@ -116,7 +116,7 @@
             <hr class="section-heading-spacer">
             <div class="clearfix"></div>
             <h2 class="section-heading">Our payment gateway</h2>
-            <p class="lead">Helps web merchants accept IOTA payments easy on their website. We have no fees, unlike other payment gateways. We have a simple API that you can integrate into your system.</p>
+            <p class="lead">Helps web merchants accept IOTA payments easy on their website. We have no fees, unlike other payment gateways. We have a simple API that you can integrate into your system, and a WooCommerce plugin if you prefer not to program.</p>
           </div>
           <div class="col-lg-5 ml-auto order-lg-1">
             <img class="img-fluid img-fix" src="resources/share_logo.png" alt="">

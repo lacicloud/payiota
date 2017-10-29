@@ -290,7 +290,7 @@ class IOTAPaymentGateway {
 
 		try {
 					//sends email to user about signup
-					$title = "WebIOTA_Email";
+					$title = "PayIOTA_Email";
 				    $transport = Swift_SmtpTransport::newInstance(gethostbyname("mail.gandi.net"), 465, "ssl") 
 						->setUsername(EMAIL_USERNAME)
 						->setPassword(EMAIL_PASSWORD)
@@ -301,7 +301,7 @@ class IOTAPaymentGateway {
 					$message = Swift_Message::newInstance("$title");
 					$message 
 						->setSubject($subject)
-						->setFrom(array("bot@lacicloud.net" => "WebIOTA"))
+						->setFrom(array("bot@lacicloud.net" => "PayIOTA"))
 						->setTo(array("$to"))
 						->setCharset('utf-8') 
 						->setBody($body, 'text/html');
@@ -394,7 +394,7 @@ class IOTAPaymentGateway {
 		$verification = $this->getNewVerificationString();
 		$verification_email = $this->getNewVerificationEmailString();
 
-		$this->sendEmail($email, "WebIOTA - Confirm Account",  "<html><body><p>Hi there!</p><p>To confirm your account, please click <a href='https://payiota.me/confirm.php?key=".$verification_email."'>here</a>.</p><p>Thanks!</p></body></html>");
+		$this->sendEmail($email, "PayIOTA - Confirm Account",  "<html><body><p>Hi there!</p><p>To confirm your account, please click <a href='https://payiota.me/confirm.php?key=".$verification_email."'>here</a>.</p><p>Thanks!</p></body></html>");
 
 		//empty by default
 		$ipn_url = '';
@@ -640,7 +640,7 @@ class IOTAPaymentGateway {
 		$stmt->bindParam(":created", $created);
 		$stmt->execute();
 
-		$this->logEvent("ERR_OK", "Generated new payment with ID ".$realID." with address ".$address);
+		$this->logEvent("ERR_OK", "Generated new payment with ID ".$realID." with address ".$address." for price USD ".$price.", for price IOTA ".$price_iota." and IPN URL ".$ipn_url);
 		return json_encode(array($address, $price_iota));
 	}
 
