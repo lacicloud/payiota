@@ -1,14 +1,16 @@
 Programmer: Laszlo Molnarfi (https://github.com/lacicloud/)
-Contributors: Isiah (iotangle.slack.com), kelisdoufu (iotangle.slack.com), Huko600RR (Reddit), Nivesh (iotangle.slack.com), andy (iotangle.slack.com), cisty (= Dan Darden, iotangle.slack.com), Muhammad Junaid (http://ajvortex.com)
+Designer: Isaiah Nwukor (http://nwukor.com)
+Contributors: kelisdoufu (iotangle.slack.com), Huko600RR (Reddit), Nivesh (iotangle.slack.com), andy (iotangle.slack.com), cisty (= Dan Darden, iotangle.slack.com), Muhammad Junaid (http://ajvortex.com)
 
+----
 Services using PayIOTA:
-LaciCloud - https://lacicloud.net
-CodeKumite - http://www.codekumite.com
-TRVS CRSP - https://trvscrsp.com/
-iota.sk - http://iota.sk/
-iota4earth - http://iota4earth.ecologie.io/
-CryptoStore.Trade - http://cryptostore.trade
-SpendIOTA - https://www.spendiota.com
+LaciCloud 			- https://lacicloud.net
+CodeKumite 			- http://www.codekumite.com
+TRVS CRSP 			- https://trvscrsp.com/
+iota.sk 			- http://iota.sk/
+iota4earth			- http://iota4earth.ecologie.io/
+CryptoStore.Trade		- http://cryptostore.trade
+SpendIOTA 			- https://www.spendiota.com
 
-
+----
 Donate: 9PGFSVUVDPQTUDDCPNQKCTZ9ZQKLFFTJYLQVZTXYWESN9YKNGEAHCHIJDZXWTCIHURHHIYUHRNZVMBUSXWEAXZXJIA

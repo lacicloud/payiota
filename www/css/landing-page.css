@@ -78,7 +78,7 @@ body, h1, h2, h3, h4, h5, h6 {
 
 .content-section-a {
   padding: 50px 0;
-  background-color: #f8f8f8;
+  background-color: #f8f9fa;
 }
 
 .content-section-b {
@@ -150,3 +150,220 @@ footer {
 p.copyright {
   margin: 15px 0 0;
 }
+
+/*****************************
+Landing Page Mods
+*******************************/
+
+/* Navigation Bar Box Shadow */
+nav.navbar.navbar-expand-lg.navbar-light.bg-light.fixed-top {box-shadow:0px .1px 5px rgba(0,0,0,0.2);}
+
+
+/* Intro Message Headers - Font Sizes*/
+.intro-message h1 {line-height:1.75em;}
+.intro-message h2 {font-size: 3.3em;line-height:1.2;}
+.intro-message h3 {font-size: 1.9em;}
+/* Intro Message Headers - General*/
+.intro-message h1,
+.intro-message h2,
+.intro-message h3,
+.intro-message h4,
+.intro-message h5,
+.intro-message h6 {
+    color:#fff;
+    text-shadow: 0px 5px 10px rgba(0,0,0,0.65);
+}
+
+/* Intro Message Divider - hide*/
+.intro-divider {
+    visibility:hidden;
+    margin-bottom:20px;
+}
+
+/* Intro Message Buttons */
+a.btn.btn-secondary.btn-lg {
+	background:rgba(0,0,0,.8); 
+	border:none;
+	box-shadow:0px 0px 1px rgba(255,255,255,.2);
+	padding:8px 18px 13px 18px;
+	-webkit-transition: background-color .5s ease-out;
+	-moz-transition: background-color .5s ease-out;
+	-o-transition: background-color .5s ease-out;
+	transition: background-color .5s ease-out;
+}
+a.btn.btn-secondary.btn-lg:hover {background:rgba(0,0,0,0.55);}
+
+/* Featured Benefits */
+.top_features {
+    text-align:center !important;
+}
+.top_features .fa {
+    font-size:3.3em;
+    margin-bottom:15px;
+    color:rgba(0,0,0,0.4)
+}
+
+.top_features div:not(:first-child) {
+    border-left:1px solid rgba(0,0,0,0.1);
+}
+
+.top_features h3 {font-size:1.35em;}
+
+.top_features .section-heading {
+    margin-bottom: 10px;
+}
+
+.top_features p {
+    font-weight: normal;
+    line-height: 1.6em;
+}
+
+/* content-section-a */
+.content-section-a {
+    padding: 0px;
+}
+
+p {
+    font-weight: normal;
+    line-height: 1.5em;
+}
+
+.content-section-a .top_features div {
+    padding-top:25px;
+    padding-bottom:20px;}
+	
+	
+/* Photo Features */
+.photo_features {
+    padding:0px !important;
+    margin:0px;
+    max-width:100% !important;
+}
+
+.left-block, .right-block {
+    width:calc(65vw - 10px) !important;
+    display:inline-block;
+    padding:30px 60px;
+}
+.left-block {
+    float:left;
+}
+.right-block {
+    float:right;
+}
+.right_image img {
+    position:relative !important;
+    right:-3px !important;
+}
+.left_image img, .right_image img {
+    width:calc(35vw - 10px) !important;
+    display:inline-block;
+}
+
+/* Common Links Section */
+.content-section-a.ending_section {
+  border-bottom: 1px solid rgba(0,0,0,0.45) !important;
+}
+.faq {
+    font-family:"Lato", helvetica;
+    font-size: 1.25rem;
+    font-weight: 300;
+    padding:25px 0px;
+    text-align:center;
+}
+.faq a {color: rgba(0,0,0,0.5);}
+.faq a .fa {margin:0px 10px; vertical-align:baseline;}
+.faq div div:not(:first-child) {border-left: 1px solid rgba(0,0,0,0.1);}
+
+
+
+@media screen and (max-width:1200px) {
+.left_image img, .right_image img {
+    width:calc(50vmax - 10px) !important;
+
+}
+
+.left-block, .right-block {
+    width:calc(50vmax - 10px) !important;
+    display:inline-block;
+    padding:20px 40px;
+}
+}
+
+
+
+
+
+
+@media screen and (max-width:1200px) and (min-width:968px) {
+.left_image img, .right_image img {
+    width:calc(50vw - 10px);
+
+}
+
+.left-block, .right-block {
+   width:calc(50vw - 10px);
+    display:inline-block;
+    padding:20px 30px;
+}
+
+
+
+}
+
+
+@media screen and (max-width:968px)  {
+
+.top_features div:not(:first-child) {
+    border-top: 1px solid rgba(0,0,0,0.05);
+	border-left:none;
+}
+
+.photo_features {
+	display:block !important;
+}
+
+.left-block, .right-block {
+
+  width:100%;
+}
+
+.left_image img, .right_image img {
+float:left;
+width:calc(50vw - 10px) !important;
+display:inline-block;
+}
+
+.left-block, .right-block {
+   padding:15px 25px;
+   display:inline-block;
+}
+
+.faq {clear:both;}
+.content-section-a.ending_section {
+    border-top: px solid rgba(0,0,0,0.45) !important;
+}
+
+}
+
+@media screen and (max-width:700px) {
+    
+.left_image img, .right_image img {
+   width: calc(100%) !important;
+   display:block !important;
+   float:none;
+   max-width:initial !important;
+   position: initial !important;
+}
+
+.left-block, .right-block {
+   padding:15px 25px;
+   width: 100% !important;
+   display:block !important;
+   float:none;
+}
+
+.faq * {max-width:initial;display:inline-table;border:none !important;width:100%;margin:10px auto;}
+
+}
+.faq .fa {display:inline;}

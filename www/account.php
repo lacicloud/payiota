@@ -41,14 +41,14 @@ if (isset($_POST["email"]) and isset($_POST["password"]) and isset($_POST["passw
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>WebIOTA - Account</title>
+		<title>PayIOTA - Account</title>
 		<?php include('header.php'); ?>
 
 	</head>
 	<body>
 		<div class="container-fluid">
 		<div class="row">
-			<div class="col-md-7 col-12 login_hero" style="background:url('resources/hero-<?php echo rand(1,5);?>.jpg'); background-size: cover;">
+			<div class="col-md-7 col-12 login_hero" style="background:url('resources/hero-<?php echo rand(1,9);?>.jpg'); background-size: cover;">
 				<ul class="menu hero_menu">
 					<li><a href="/docs/payiota_api_tutorial.pdf">Read the docs</a></li>
 					<li><a href="account.php?register">Sign-up</a></li>
@@ -60,7 +60,10 @@ if (isset($_POST["email"]) and isset($_POST["password"]) and isset($_POST["passw
 				</div>
 			</div>
 			<div class="col-md-5 col-12 login_details">
-				<a href="/" class="logo"><img src="resources/iota-logo.png"><span>Payment Gateway</span></a>
+				<a href="/" class="logo">
+				<!--<img src="resources/iota-logo.png">-->
+				<img src="resources/payiota_logo3.png">
+				<span>Payment Gateway</span></a>
 				<!--<h1>Pay With IOTA</h1>-->
 				<div class="row">
 					<div class="success"></div>

@@ -45,9 +45,9 @@ a, a:hover {text-decoration:none;}
 .login_details {overflow-y:scroll;float:left;width: 40vw;height:100vh;}
 .login_details h1 {margin:10px 0px 20px 0px;font-size:30px;}
 .login_details .login_wrapper {padding:0px 15px;}
-.login_details .logo img {width:110px;padding:0px 5px;}
+.login_details .logo img {width: auto;height: 33px;padding: 3px 5px;margin: 8px 0px;}
 .login_details .logo {display:block;margin-bottom:20px;border-bottom: 1px solid rgba(0,0,0,0.2);width:100%}
-.login_details .logo span {color:#555;border-left: 1px solid rgba(0,0,0,0.1);padding-left:13px;position:relative;top:2px;}
+.login_details .logo span {color:#555;border-left: 1px solid rgba(0,0,0,0.1);padding-left:13px;vertical-align:middle;}
 .login_details input {border-radius:3px;border: 1px solid rgba(0,0,0,0.2);padding:10px 10px;width:100%;}
 .login_details input[type="submit"] {background:#555459;color:#fff;border: 1px solid rgba(0,0,0,0.2);width: 100%;padding:7px 15px;margin-bottom:10px;font-size:18px;font-weight: 900;cursor: pointer;text-shadow: 0 1px 1px rgba(0,0,0,.1);}
 
