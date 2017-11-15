@@ -11,6 +11,8 @@ iota.sk 			- http://iota.sk/
 iota4earth			- http://iota4earth.ecologie.io/
 CryptoStore.Trade		- http://cryptostore.trade
 SpendIOTA 			- https://www.spendiota.com
+IOTAVERSE 			- http://www.iotaverse.com
+
 
 ----
 Donate: 9PGFSVUVDPQTUDDCPNQKCTZ9ZQKLFFTJYLQVZTXYWESN9YKNGEAHCHIJDZXWTCIHURHHIYUHRNZVMBUSXWEAXZXJIA

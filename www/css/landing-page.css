@@ -367,3 +367,85 @@ display:inline-block;
 
 }
 .faq .fa {display:inline;}
+
+/* PAYIOTA - Interface */
+input.ipn_url_new {padding-left:15px;}
+section.content-section-b.api_details {margin:110px auto 30px auto; width: 95%;padding:30px 35px;border-radius:5px !important;border:1px solid rgba(0,0,0,0.03);
+background:rgba(248, 249, 250, 0.35);
+}
+
+strong.nav-link.account_name {text-shadow:0px 2px 2px rgba(0,0,0,0.1);background:rgba(0,0,0,0.7);border-radius:100px;color:#fff !important;padding:1px 10px;margin-top:9px;font-size:14px;}
+		
+.api_list td {line-height:1.8em;list-style:none;}
+.api_list td:first-child {color:rgba(0,0,0,0.6);width:15%;display:inline-block;}
+.api_list td:last-child {color:rgba(50,50,50,0.95);width:60%;display:inline-block;}
+.api_list tr {margin-bottom:17px;display:block;}
+
+.api_payments { width: 94vw;margin: 0 auto;}
+.api_payments > * {max-width: 100% !important;}
+.api_payments table.table.table-striped.table-responsive td span {display:none;}
+.api_payments table.table.table-striped.table-responsive td {font-size:13px;text-align:center;}
+.api_payments table.table.table-striped.table-responsive td:nth-child(2) {text-align:initial;}
+.api_payments table.table.table-striped.table-responsive tr:nth-child(odd) {background:rgba(248, 249, 250, 0.35);}
+.api_payments table tr * {border-color:rgba(0,0,0,0.03) !important;vertical-align:middle;}
+
+section.content-section-b.api_details a  {border: 1px solid #007bff;padding:4px 10px;margin:10px 0px 10px 0px;display:inline-block;}
+section.content-section-b.api_details a.no_ipn {border-color:rgba(255,70,90,1);color:rgba(255,90,70,1);}
+section.content-section-b.api_details h4 {margin:20px 0px;}
+
+.warning_list .info, .warning_list .success, .warning_list .warning, .warning_list .error, .warning_list .validation {
+    margin: 5px 0px 20px 0px;
+	text-transform:capitalize;
+}
+@media screen and (max-width:991px) {
+    strong.nav-link.account_name {
+    border-radius:3px;
+    padding:10px;
+    }
+}
+
+@media screen and (max-width:1200px) {
+
+	.api_payments table.table.table-striped.table-responsive {width:100%;}
+	.api_payments table.table.table-striped.table-responsive td {display:block;width:100% !important;text-align:left;}
+	.api_payments table.table.table-striped.table-responsive td:nth-child(2) {text-align:initial;}
+	.api_payments table.table.table-striped.table-responsive tr:nth-child(odd) {background:rgba(248, 249, 250, 0.75);}
+
+	.api_payments {padding:4px;}
+	.api_payments table {margin:0px;}
+	.api_payments table.table.table-striped.table-responsive td span 
+	{display:inline-block;width:120px;}
+
+	.api_payments table.table.table-striped.table-responsive a 
+	 {overflow-x: scroll;display:block;width:calc(100vw - 155px);line-height:25px;padding:10px 0px;}
+
+	.api_payments table th:nth-child(2),
+	.api_payments table th:nth-child(3),
+	.api_payments table th:nth-child(4),
+	.api_payments table th:nth-child(5),
+	.api_payments table th:nth-child(6) {
+		display:none;
+	}
+
+
+	section.content-section-b.api_details td {
+		width:100%;
+		max-width:calc(100vw - 97px);
+		line-height:1.9em;
+		margin-bottom:15px;
+	}
+
+	section.content-section-b.api_details input {
+		width:100%;
+		margin:10px 0px;
+		padding:10px;
+		display:block;
+	}
+}
+
+@media screen and (max-width:320px) {
+	.navbar-brand img {
+		width:auto;
+		height:10vw;
+	}
+}
