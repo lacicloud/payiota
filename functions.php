@@ -34,6 +34,10 @@ class IOTAPaymentGateway {
 			"http://node02.iotatoken.nl:14265"
 			);
 
+		//shuffle nodes to prevent overloading
+		shuffle($nodes);
+
+
 		foreach ($nodes as $key => $value) {
 			if ($this->isNodeOnline($value)) {
 				$working = $value;
@@ -220,6 +224,9 @@ class IOTAPaymentGateway {
 	public function getAddressBalance($address) {
 		$url = $this->getWorkingNode();
 
+		//cut out checksum from seed
+		$address = substr($address, 0, -9);
+
 		$ch = curl_init();
 
 		curl_setopt($ch, CURLOPT_URL, $url);
@@ -229,7 +236,7 @@ class IOTAPaymentGateway {
 
 		$headers = array();
 		$headers[] = "Content-Type: application/json";
-		$headers[] = "X-IOTA-API-Version: ANY";
+		$headers[] = "X-IOTA-API-Version: 1";
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
 		$result = curl_exec($ch);
@@ -239,7 +246,7 @@ class IOTAPaymentGateway {
 		}
 
 		curl_close ($ch);
-
+		
 		$balance = @json_decode($result, true)["balances"];
 		$balance = $balance[0];
 		

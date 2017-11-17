@@ -88,7 +88,7 @@ if (isset($_POST["ipn_url_new"])) {
 		  <?php } ?>
 		  </td></tr>
 		  <tr><td>Number of addresses:</td><td class="api_data"><?php echo $count;?></td></tr>
-		  <tr><td>Total balance:</td><td class="api_data"><?php echo $total_balance;?> MI</td></tr>
+		  <tr><td>Total balance:</td><td class="api_data"><?php echo $total_balance;?> IOTA</td></tr>
 		</table>
 
 		<a href="?refresh=true">Refresh Balance</a>
