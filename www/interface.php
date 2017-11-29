@@ -19,6 +19,7 @@ $data = $api->getAccountValues($id);
 $data_payment = $api->getPaymentAccountValues($id);
 $count = $api->countInvoicesByID($id);
 
+
 if (!isset($_SESSION["total_balance"]) or isset($_GET["refresh"])) {
 	$_SESSION["total_balance"] = $api->getAddressesTotal($id);
 }
@@ -88,7 +89,7 @@ if (isset($_POST["ipn_url_new"])) {
 		  <?php } ?>
 		  </td></tr>
 		  <tr><td>Number of addresses:</td><td class="api_data"><?php echo $count;?></td></tr>
-		  <tr><td>Total balance:</td><td class="api_data"><?php echo $total_balance;?> IOTA</td></tr>
+		  <tr><td>Total balance:</td><td class="api_data"><?php echo $total_balance; ?> &nbsp (IOTA)</td></tr>
 		</table>
 
 		<a href="?refresh=true">Refresh Balance</a>
@@ -130,7 +131,7 @@ if (isset($_POST["ipn_url_new"])) {
 		  <td><span>Price (USD)</span>		$".$value[0]["price"]."</td>
 		  <td><span>Price in IOTA</span>	".$value[0]["price_iota"]."</td>
 		  <td><span>Custom Variable</span>	".$value[0]["custom"]."</td>
-		  <td><span>Balance</span>			".$api->getAddressBalance($value[0]["address"])."</td>
+		  <td><span>Balance</span>			". $api->getAddressBalance($value[0]["address"])  ."</td>
 		  <td><span>Status</span>			".$value[0]["done"]."</td>
 		</tr>";
 		$count++;

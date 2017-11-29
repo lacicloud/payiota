@@ -25,18 +25,17 @@ class IOTAPaymentGateway {
 
 	public function getWorkingNode() {
 		$nodes = array(
+			"http://node01.iotatoken.nl:14265",
+			"http://node02.iotatoken.nl:14265",
+			"http://node03.iotatoken.nl:15265",
+			"http://node04.iotatoken.nl:14265",
+			"http://node05.iotatoken.nl:16265",
 			"http://iota.bitfinex.com", //port 80
 			"http://service.iotasupport.com:14265",
 			"http://eugene.iota.community:14265",
 			"http://eugene.iotasupport.com:14999",
-			"http://eugeneoldisoft.iotasupport.com:14265",
-			"http://node01.iotatoken.nl:14265",
-			"http://node02.iotatoken.nl:14265"
+			"http://eugeneoldisoft.iotasupport.com:14265"
 			);
-
-		//shuffle nodes to prevent overloading
-		shuffle($nodes);
-
 
 		foreach ($nodes as $key => $value) {
 			if ($this->isNodeOnline($value)) {
@@ -57,7 +56,7 @@ class IOTAPaymentGateway {
 	{
 		//knock knock
 	    $ch = curl_init($url);
-	    curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 3);
+	    curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 1);
 	    curl_setopt($ch,CURLOPT_HEADER, false);
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 	    curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
