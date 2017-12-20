@@ -30,6 +30,7 @@ class IOTAPaymentGateway {
 			"http://node03.iotatoken.nl:15265",
 			"http://node04.iotatoken.nl:14265",
 			"http://node05.iotatoken.nl:16265",
+			"http://cryptoiota.win:14265",
 			"http://iota.bitfinex.com", //port 80
 			"http://service.iotasupport.com:14265",
 			"http://eugene.iota.community:14265",
