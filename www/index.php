@@ -18,7 +18,7 @@
 
     </style>
 
-    <title>PayIOTA - Payment Gateway</title>
+    <title>PayIOTA - IOTA Payment Gateway</title>
     <?php include('header.php'); ?>
 
     <meta property="og:image" content="https://payiota.me/resources/payiota_icon.png"/>
