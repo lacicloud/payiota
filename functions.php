@@ -224,7 +224,7 @@ class IOTAPaymentGateway {
 	public function getAddressBalance($address) {
 		$url = $this->getWorkingNode();
 
-		//cut out checksum from seed
+		//cut out checksum from address
 		$address = substr($address, 0, -9);
 
 		$ch = curl_init();
@@ -253,6 +253,40 @@ class IOTAPaymentGateway {
 		$balance = (int)$balance;
 		
 		return $balance;
+	}
+
+	public function getAddressStatus($address) {
+		$url = $this->getWorkingNode();
+
+		//cut out checksum from address
+		$address = substr($address, 0, -9);
+
+		$ch = curl_init();
+
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, "{\"command\": \"findTransactions\", \"addresses\": [\"".$address."\"]}");
+		curl_setopt($ch, CURLOPT_POST, 1);
+
+		$headers = array();
+		$headers[] = "Content-Type: application/json";
+		$headers[] = "X-IOTA-API-Version: 1";
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+		$result = curl_exec($ch);
+		curl_close ($ch);
+		
+		$status = @json_decode($result, true)["hashes"];
+		$status = $status[0];
+
+		if (empty($status)) {
+			$status = "NOT SENT";
+		} else {
+			$status = "PENDING";
+		}
+			
+		return $status;
+		
 	}
 
 	public function hashPassword($password) {

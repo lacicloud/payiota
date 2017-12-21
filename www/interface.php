@@ -93,6 +93,8 @@ if (isset($_POST["ipn_url_new"])) {
 		</table>
 
 		<a href="?refresh=true">Refresh Balance</a>
+		<a href="?hide_empty=true">Hide Empty</a>
+		<a href="?hide_empty=false">Unhide Empty</a>
 
 		<h4>Update IPN URL:</h4>
 		<form action="#" method="POST" onsubmit="return ValidateURL(this);">
@@ -118,12 +120,19 @@ if (isset($_POST["ipn_url_new"])) {
       <th>Custom Variable</th>
       <th>Balance</th>
       <th>Status</th>
+      <th>Paid</th>
     </tr>
   </thead>
   <tbody>
 	<?php 
 	$count = 0;
 	foreach ($data_payment as $key => $value) {
+		$balance = $api->getAddressBalance($value[0]["address"]);
+		if ($balance == 0 and $_GET["hide_empty"] == "true") {
+			continue;
+		}
+		$status = $api->getAddressStatus($value[0]["address"]);
+
 		echo "
 		<tr>
 		  <th scope='row'>".$count."</th>
@@ -131,8 +140,9 @@ if (isset($_POST["ipn_url_new"])) {
 		  <td><span>Price (USD)</span>		$".$value[0]["price"]."</td>
 		  <td><span>Price in IOTA</span>	".$value[0]["price_iota"]."</td>
 		  <td><span>Custom Variable</span>	".$value[0]["custom"]."</td>
-		  <td><span>Balance</span>			". $api->getAddressBalance($value[0]["address"])  ."</td>
-		  <td><span>Status</span>			".$value[0]["done"]."</td>
+		  <td><span>Balance</span>			". $balance  ."</td>
+		  <td><span>Status</span>			". $status ."</td>
+		  <td><span>Paid</span>			".$value[0]["done"]."</td>
 		</tr>";
 		$count++;
 	}
