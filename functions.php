@@ -282,7 +282,7 @@ class IOTAPaymentGateway {
 		if (empty($status)) {
 			$status = "NOT SENT";
 		} else {
-			$status = "PENDING";
+			$status = "SENT";
 		}
 			
 		return $status;
