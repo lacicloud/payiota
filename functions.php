@@ -280,9 +280,9 @@ class IOTAPaymentGateway {
 		$status = $status[0];
 
 		if (empty($status)) {
-			$status = "NOT SENT";
+			$status = "NOTX";
 		} else {
-			$status = "SENT";
+			$status = "TX";
 		}
 			
 		return $status;
