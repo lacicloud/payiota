@@ -25,12 +25,14 @@ class IOTAPaymentGateway {
 
 	public function getWorkingNode() {
 		$nodes = array(
+			"http://node.lukaseder.de:14265",
 			"http://node01.iotatoken.nl:14265",
 			"http://node02.iotatoken.nl:14265",
 			"http://node03.iotatoken.nl:15265",
 			"http://node04.iotatoken.nl:14265",
 			"http://node05.iotatoken.nl:16265",
 			"http://cryptoiota.win:14265",
+			"https://nodes.iota.cafe:443",
 			"http://iota.bitfinex.com", //port 80
 			"http://service.iotasupport.com:14265",
 			"http://eugene.iota.community:14265",
@@ -750,7 +752,7 @@ class IOTAPaymentGateway {
 		if ($difference > 630427) {
 			return;
 		}
-
+		echo $address;
 		$balance = $this->getAddressBalance($address);
 
 		if ($balance > $price_iota or $balance == $price_iota) {
@@ -810,6 +812,8 @@ class IOTAPaymentGateway {
 
 		$ch = curl_init();
 		curl_setopt($ch,CURLOPT_URL, $data["ipn_url"]);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
 		curl_setopt($ch,CURLOPT_POST, 1);
 		curl_setopt($ch,CURLOPT_POSTFIELDS, $post_data);
 		curl_setopt($ch, CURLOPT_REFERER, 'https://payiota.me');

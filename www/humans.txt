@@ -13,7 +13,9 @@ CryptoStore.Trade		- http://cryptostore.trade
 SpendIOTA 			- https://www.spendiota.com
 IOTAVERSE 			- http://www.iotaverse.com
 Tangle.Ninja 		- https://tangle.ninja
+CryptoIPTV - http://www.cryptoiptv.net
 Elemental Coffee - http://elementalcoffee.com/
 
 ----
+
 Donate: YCKJGZOALWRMJWZFSUJTDFKWXNQVBHEIKERKTODMBMWZZAETZVHWTZHJTKSJQJXMUUWSEUUEZZ9TE99KAEJPJIDDWW
