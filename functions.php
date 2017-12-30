@@ -752,7 +752,7 @@ class IOTAPaymentGateway {
 		if ($difference > 630427) {
 			return;
 		}
-		echo $address;
+
 		$balance = $this->getAddressBalance($address);
 
 		if ($balance > $price_iota or $balance == $price_iota) {
