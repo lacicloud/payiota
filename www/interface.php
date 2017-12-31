@@ -151,7 +151,6 @@ if (isset($_POST["ipn_url_new"])) {
 </table>
 </section>
 
-<script src="js/main.js"></script>
 <script>
 	var success = document.getElementsByClassName("success")[0];
 	var error = document.getElementsByClassName("error")[0];

@@ -15,6 +15,10 @@
             margin-right: auto;
             max-width: 75% !important;
       }
+	  
+	  .modal-title {
+		margin: 0 auto !important;
+	  }
 
     </style>
 
@@ -83,9 +87,9 @@
               </a>
             </li>
             <li class="list-inline-item">
-              <a href="https://github.com/lacicloud/payiota-woocommerce/" class="btn btn-secondary btn-lg">
-                <i class="fa fa-wordpress fa-fw"></i>
-                <span class="network-name">WooCommerce</span>
+              <a href="#" onClick="pluginSelectionPrompt();" class="btn btn-secondary btn-lg">
+                <i class="fa fa-shopping-cart fa-fw"></i>
+                <span class="network-name">E-Commerce plugins</span>
               </a>
             </li>
             <li class="list-inline-item">
@@ -130,9 +134,9 @@
 			<div class="clearfix"></div>
 			<h2 class="section-heading">Your Secure Payment Gateway</h2>
 			<p class="lead">PayIOTA helps web merchants accept IOTA payments easily on their websites with no fees. 
-			The <a href="https://github.com/lacicloud/payiota/wiki/PayIOTA-API-Documentation">PayIOTA API</a> helps you accept payments for products and services on your own website(s). 
+			The <a href="https://github.com/lacicloud/payiota/wiki/PayIOTA-API-Documentation">PayIOTA API</a> helps you accept payments for products and services on your own website(s). PayIOTA is powered by <a href="https://lacicloud.net">LaciCloud</a>.
 			<br><br>PayIOTA is a collaboration of IOTA supporters from around the world, who want to help you unlock the power of fee-less payments.
-			PayIOTA is available as a <a href="https://github.com/lacicloud/payiota-woocommerce/">Woocommerce Plugin</a> for Wordpress, with more platforms to be supported as demand permits.</p>
+			PayIOTA is available as a <a href="https://github.com/lacicloud/payiota-woocommerce/">Woocommerce Plugin</a> for Wordpress, and as a <a href="https://github.com/lacicloud/payiota-whmcs/">WHMCS plugin</a>, with more platforms to be supported as demand permits.</p>
 		</div>
 		<img class="img-fluid img-fix" src="resources/hero-6.jpg" alt="">
       <!-- /.container -->
