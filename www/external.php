@@ -18,7 +18,7 @@ echo "Please pay ".$_GET["price"]." IOTAs to address ".$_GET["address"]." !";
 echo "<br>";
 echo '	<div id="qrcode" ></div><script>new QRCode(document.getElementById("qrcode"), JSON.stringify ( { "address" : "'.$_GET["address"].'", "amount" : "'.$_GET["price"].'", "tag" : "" } ) );</script>';
 echo "<br>";
-echo "<a href='".$_GET["systemurl"]."/viewinvoice.php?id=".$_GET["invoiceid"]."'>Click here if payment is confirmed on the IOTA network!</a>";
+echo "<a href='".$_GET["systemurl"]."/clientarea.php?action=invoices'>Click here if payment is confirmed on the IOTA network!</a>";
 echo "<br>";
 echo "<a href='".$_GET["systemurl"]."'>Click here to cancel!</a>";
 
