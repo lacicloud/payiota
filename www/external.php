@@ -14,6 +14,8 @@
 <body>
 <div style="text-align: center;">
 <?php 
+$_GET = array_map('htmlspecialchars', $_GET);
+
 echo "Please pay ".$_GET["price"]." IOTAs to address ".$_GET["address"]." !";
 echo "<br>";
 echo '	<div id="qrcode" ></div><script>new QRCode(document.getElementById("qrcode"), JSON.stringify ( { "address" : "'.$_GET["address"].'", "amount" : "'.$_GET["price"].'", "tag" : "" } ) );</script>';
