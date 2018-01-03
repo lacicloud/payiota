@@ -1,5 +1,4 @@
 <?php 
-require("libs/simple_html_dom.php");
 require("libs/SwiftMailer/lib/swift_required.php");
 
 define('ROOT', dirname(__FILE__));
