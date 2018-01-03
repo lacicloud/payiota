@@ -537,8 +537,21 @@ class IOTAPaymentGateway {
 					return $this->getUSDPrice($amount);
 			}
 
-			$url  = "https://finance.google.com/finance/converter?a=$amount&from=$from&to=$to";
-			$data = file_get_contents($url);
+			$url = 'https://finance.google.com/finance/converter?a='.$amount.'&from='.$from.'&to='.$to;
+
+			$curl = curl_init();
+			curl_setopt_array($curl, array(
+				CURLOPT_RETURNTRANSFER => 1,
+				CURLOPT_URL => $url
+			));
+			$data = curl_exec($curl);
+			curl_close($curl);
+			
+			if (!$data) {
+				$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal Google Finance error: ".$data);
+				return "ERR_FATAL_3RD_PARTY";
+			}
+			
 			preg_match("/<span class=bld>(.*)<\/span>/",$data, $converted);
 			$converted = preg_replace("/[^0-9.]/", "", $converted[1]);
 			return round($converted, 3);
@@ -547,13 +560,9 @@ class IOTAPaymentGateway {
 	public function getUSDPrice($iota) {
 
 		$convert_miota = $iota / 1000000;
-		$curl = curl_init();
-		curl_setopt_array($curl, array(
-		    CURLOPT_RETURNTRANSFER => 1,
-		    CURLOPT_URL => 'https://api.coinmarketcap.com/v1/ticker/iota/',
-		));
-		$data = curl_exec($curl);
-		curl_close($curl);
+	
+		$data = $this->getCMP();
+
 		$data = json_decode($data, true);
 		$price_usd = (double)$data[0]["price_usd"];
 		$price_in_usd = $price_usd * $convert_miota;
@@ -561,16 +570,29 @@ class IOTAPaymentGateway {
 		return $price_in_usd;
 
 	}
-
-	public function getIOTAPrice($price) {
-		//to get it in number of million IOTAS, divide price by miota price, then round MIOTA
-		//to get it in IOTA, multiply MIOTA by million
-		$data = file_get_contents("https://api.coinmarketcap.com/v1/ticker/iota/");
-
+	
+	public function getCMP() {
+		$curl = curl_init();
+		curl_setopt_array($curl, array(
+		    CURLOPT_RETURNTRANSFER => 1,
+		    CURLOPT_URL => 'https://api.coinmarketcap.com/v1/ticker/iota/',
+		));
+		$data = curl_exec($curl);
+		
 		if (!$data) {
 			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal CMP error: ".$data);
 			return "ERR_FATAL_3RD_PARTY";
 		}
+		
+		curl_close($curl);
+		
+		return $data;
+	}
+
+	public function getIOTAPrice($price) {
+		//to get it in number of million IOTAS, divide price by miota price, then round MIOTA
+		//to get it in IOTA, multiply MIOTA by million
+		$data = $this->getCMP();
 
 		$data = json_decode($data, true);
 
