@@ -83,7 +83,7 @@ if (isset($_POST["ipn_url_new"])) {
 		  <tr><td>Verification:</td><td class="api_data"><?php echo $data["verification"];?></td></tr>
 		  <tr><td>Your IPN URL:</td><td class="api_data">
 		  <?php if($data["ipn_url"]) { ?>
-			<a href="<?php echo $data["ipn_url"];?>"><?php echo $data["ipn_url"];?></a>
+			<a href="<?php echo htmlentities($data["ipn_url"]);?>"><?php echo htmlentities($data["ipn_url"]);?></a>
 		  <?php } else { ?>
 			<a class="no_ipn" href="#">No IPN URL Added</a>
 		  <?php } ?>
@@ -151,7 +151,6 @@ if (isset($_POST["ipn_url_new"])) {
 </table>
 </section>
 
-<script src="js/main.js"></script>
 <script>
 	var success = document.getElementsByClassName("success")[0];
 	var error = document.getElementsByClassName("error")[0];
