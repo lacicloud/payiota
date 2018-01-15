@@ -50,7 +50,7 @@ if (isset($_POST["email"]) and isset($_POST["password"]) and isset($_POST["passw
 		<div class="row">
 			<div class="col-md-7 col-12 login_hero" style="background:url('resources/hero-<?php echo rand(1,9);?>.jpg'); background-size: cover;">
 				<ul class="menu hero_menu">
-					<li><a href="/docs/payiota_api_tutorial.pdf">Read the docs</a></li>
+					<li><a href="https://github.com/lacicloud/payiota/wiki/PayIOTA-API-Documentation">Read the docs</a></li>
 					<li><a href="account.php?register">Sign-up</a></li>
 					<li><a href="account.php">Log-in</a></li>
 				</ul>
@@ -133,7 +133,6 @@ if (isset($_POST["email"]) and isset($_POST["password"]) and isset($_POST["passw
 			</div>
 		</div>
 		</div>
-		<script src="js/main.js"></script>
 		<script>
 			var success = document.getElementsByClassName("success")[0];
 			var error = document.getElementsByClassName("error")[0];

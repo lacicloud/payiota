@@ -28,7 +28,11 @@ if (isset($_POST["api_key"])) {
 					$price = $api->convertCurrency($price, $_POST["currency"], "USD");
 			}
 
-			echo ($api->addPaymentToServer($id, $price, $custom));
+			if (isset($_POST["ipn_url"])) {
+				$ipn_url = $_POST["ipn_url"];
+			}
+			
+			echo ($api->addPaymentToServer($id, $price, $custom, $ipn_url));
 		} elseif (@$_POST["action"] == "update") {
 
 			$address = $_POST["address"];
@@ -46,7 +50,8 @@ if (isset($_POST["api_key"])) {
 		}
 
 	}
-
+} elseif ($_GET["action"] == "convert_to_usd" and isset($_GET["iota"])) {
+	echo $api->getUSDPrice($_GET["iota"]);
 } else {
 	die(1);
 }
