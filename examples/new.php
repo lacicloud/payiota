@@ -7,6 +7,7 @@ $price = "1";
 //whatever you want for identifying your users or passing back data to your payment processor. This cannot be empty.
 $custom = "";
 
+//If no default IPN url is set in PayIOTA interface, you will have to specify if here.
 $request = array(
 	"api_key" => PAYIOTA_API_KEY
 	"price" => $price,
