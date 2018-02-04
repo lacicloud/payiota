@@ -4,7 +4,7 @@ define("PAYIOTA_API_KEY", "");
 
 //1 USD
 $price = "1";
-//whatever you want for identifying your users or passing back data to your payment processor
+//whatever you want for identifying your users or passing back data to your payment processor. This cannot be empty.
 $custom = "";
 
 $request = array(
@@ -12,7 +12,8 @@ $request = array(
 	"price" => $price,
 	"currency" => "USD",
 	"custom" => $custom,
-	"action" => "new"
+	"action" => "new",
+	"ipn_url" => "https://example.com/ipn.php"
 	);
 
 $curl = curl_init();
