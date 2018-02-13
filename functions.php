@@ -24,6 +24,7 @@ class IOTAPaymentGateway {
 
 	public function getWorkingNode() {
 		$nodes = array(
+			"http://iotanode.party:14265/",
 			"http://node.lukaseder.de:14265",
 			"http://node01.iotatoken.nl:14265",
 			"http://node02.iotatoken.nl:14265",
@@ -31,7 +32,6 @@ class IOTAPaymentGateway {
 			"http://node04.iotatoken.nl:14265",
 			"http://node05.iotatoken.nl:16265",
 			"http://cryptoiota.win:14265",
-			"https://nodes.iota.cafe:443",
 			"http://iota.bitfinex.com", //port 80
 			"http://service.iotasupport.com:14265",
 			"http://eugene.iota.community:14265",
@@ -242,7 +242,7 @@ class IOTAPaymentGateway {
 
 		$result = curl_exec($ch);
 		if (curl_errno($ch)) {
-			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal lightnode failure while getting balance: ".$result);
+			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal lightnode failure while getting balance: ".curl_error($ch));
 		    return "ERR_FATAL_3RD_PARTY";
 		}
 
@@ -579,7 +579,7 @@ class IOTAPaymentGateway {
 		$data = curl_exec($curl);
 		
 		if (!$data) {
-			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal CMP error: ".$data);
+			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal CMP error: ".curl_error($curl));
 			return "ERR_FATAL_3RD_PARTY";
 		}
 		
@@ -773,7 +773,7 @@ class IOTAPaymentGateway {
 		if ($difference > 630427) {
 			return;
 		}
-
+	
 		$balance = $this->getAddressBalance($address);
 
 		if ($balance > $price_iota or $balance == $price_iota) {
