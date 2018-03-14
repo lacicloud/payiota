@@ -52,6 +52,8 @@ if (isset($_POST["api_key"])) {
 	}
 } elseif ($_GET["action"] == "convert_to_usd" and isset($_GET["iota"])) {
 	echo $api->getUSDPrice($_GET["iota"]);
+} elseif ($_GET["action"] == "getnumberofusers") {
+	echo $api->getNumberOfUsers();
 } else {
 	die(1);
 }

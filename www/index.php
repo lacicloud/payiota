@@ -1,3 +1,7 @@
+<?php 
+require("../functions.php");
+$api = new IOTAPaymentGateway;
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -244,7 +248,8 @@
             <a href="/humans.txt">Owners</a>
           </li>
         </ul>
-        <p class="copyright text-muted small">Copyright &copy; PayIOTA 2017. All Rights Reserved</p>
+        <p class="copyright text-muted small">Copyright &copy; PayIOTA 2018. All Rights Reserved.</p>
+        <p class="copyright text-muted small">Number of users: <?php echo $api->getNumberOfUsers(); ?> </p>
       </div>
     </footer>
 

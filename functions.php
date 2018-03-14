@@ -256,6 +256,15 @@ class IOTAPaymentGateway {
 		return $balance;
 	}
 
+	public function getNumberOfUsers() {
+		$db = $this->getDB();
+		$sql = "SELECT count(*) FROM users";
+		$stmt = $db->prepare($sql);
+		$stmt->execute();
+
+		return key(array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
+	}
+
 	public function getAddressStatus($address) {
 		$url = $this->getWorkingNode();
 
