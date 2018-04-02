@@ -2,6 +2,9 @@
 require("../functions.php");
 $api = new IOTAPaymentGateway;
 
+//prevent errors from showing for the public facing API (undefined notices mostly) to maintain the API's programmed error mechanism
+ini_set('display_errors', 0); 
+
 if (isset($_POST["api_key"])) {
 	$id = $api->matchAPItoID($_POST["api_key"]);
 
@@ -9,7 +12,7 @@ if (isset($_POST["api_key"])) {
 		echo "ERR_API_KEY_INVALID";
 		die(0);
 	} else {
-		if (@$_POST["action"] == "new") {
+		if (isset($_POST["action"]) and $_POST["action"] == "new") {
 			$price = $_POST["price"];
 
 			if (!is_numeric($price)) {
@@ -51,11 +54,11 @@ if (isset($_POST["api_key"])) {
 		}
 
 	}
-} elseif ($_GET["action"] == "convert_to_usd" and isset($_GET["iota"])) {
+} elseif (isset($_GET["action"]) and $_GET["action"] == "convert_to_usd" and isset($_GET["iota"])) {
 	echo $api->getUSDPrice($_GET["iota"]);
-} elseif ($_GET["action"] == "getnumberofusers") {
+} elseif (isset($_GET["action"]) and $_GET["action"] == "getnumberofusers") {
 	echo $api->getNumberOfUsers();
-} elseif ($_POST["action"] == "getinvoice") {
+} elseif (isset($_POST["action"]) and $_POST["action"] == "getinvoice") {
 	
 	if (!isset($_POST["invoice"])) {
 		echo "ERR_PARAMETERS_MISSING";
