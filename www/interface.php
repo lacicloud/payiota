@@ -128,7 +128,7 @@ if (isset($_POST["ipn_url_new"])) {
 	$count = 0;
 	foreach ($data_payment as $key => $value) {
 		$balance = $api->getAddressBalance($value[0]["address"]);
-		if ($balance == 0 and $_GET["hide_empty"] == "true") {
+		if ($balance == 0 and isset($_GET["hide_empty"]) and $_GET["hide_empty"] == "true") {
 			continue;
 		}
 		$status = $api->getAddressStatus($value[0]["address"]);

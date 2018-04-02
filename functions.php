@@ -285,7 +285,7 @@ class IOTAPaymentGateway {
 		curl_close ($ch);
 		
 		$status = @json_decode($result, true)["hashes"];
-		$status = $status[0];
+		$status = @$status[0];
 
 		if (empty($status)) {
 			$status = "NOTX";
