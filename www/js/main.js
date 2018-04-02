@@ -147,16 +147,20 @@ function pluginSelectionPrompt() {
             value: '1',
         },
         {
-            text: 'Prestashop Plugin',
+            text: 'Magento 1.x Plugin',
             value: '2',
         },
-		{
-            text: 'Shopify Plugin',
+        {
+            text: 'Prestashop Plugin',
             value: '3',
         },
 		{
-            text: 'More?',
+            text: 'Shopify Plugin',
             value: '4',
+        },
+		{
+            text: 'More?',
+            value: '5',
         }
 		
     ],
@@ -165,17 +169,19 @@ function pluginSelectionPrompt() {
 			window.location.replace("https://github.com/lacicloud/payiota-woocommerce/releases");
 		} else if (result == '1') {
 			window.location.replace("https://github.com/lacicloud/payiota-whmcs/releases");
-		}	else if (result == '2') {
+        } else if (result == '2') {
+                window.location.replace("https://github.com/lacicloud/payiota-magento-1/releases");
+		} else if (result == '3') {
 			bootbox.alert({
 			title: "Message from PayIOTA.me",
 			message: "Coming soon!"
 			});
-		} else if (result == '3') {
+		} else if (result == '4') {
 			bootbox.alert({
 			title: "Message from PayIOTA.me",
 			message: "Contact Shopify support <a href='https://www.shopify.com/contact'>here</a> to request them to add PayIOTA.me and post <a href='https://ecommerce.shopify.com/c/payments-shipping-fulfilment/t/post-your-gateway-requests-here-136389'>here</a> on the Shopify forums to get their attention!"
 			});
-		} else if (result == '4') {
+		} else if (result == '5') {
 			bootbox.alert({
 			title: "Message from PayIOTA.me",
 			message: "Please contact PayIOTA support at support@payiota.me to request more plugins!"
