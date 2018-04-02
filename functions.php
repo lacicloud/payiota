@@ -18,8 +18,6 @@ set_exception_handler(function ($e) {
 	die(1);
 });
 
-ini_set('display_errors', 0); 
-
 class IOTAPaymentGateway {
 
 	public function getWorkingNode() {
