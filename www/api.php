@@ -47,6 +47,7 @@ if (isset($_POST["api_key"])) {
 
 		} else {
 			echo "ERR_PARAMETERS_MISSING";
+			die(0);
 		}
 
 	}
@@ -54,6 +55,23 @@ if (isset($_POST["api_key"])) {
 	echo $api->getUSDPrice($_GET["iota"]);
 } elseif ($_GET["action"] == "getnumberofusers") {
 	echo $api->getNumberOfUsers();
+} elseif ($_POST["action"] == "getinvoice") {
+	
+	if (!isset($_POST["invoice"])) {
+		echo "ERR_PARAMETERS_MISSING";
+		die(0);
+	}
+
+	$result = $api->getInvoice($_POST["invoice"]);
+
+	if (!is_array($result)) {
+		echo "ERR_NOT_FOUND";
+		die(0);
+	} else {
+		echo $api->returnJSONApi("ERR_OK", $result);
+	}
+
+			
 } else {
 	die(1);
 }

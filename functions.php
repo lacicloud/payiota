@@ -328,12 +328,12 @@ class IOTAPaymentGateway {
 	}
 
 	public function matchCodeToMessage($code) {
-		$array = array("ERR_EXISTS" => "Sorry, email already exists in database!", "ERR_LOGIN_INCORRECT" => "Sorry, email or password incorrect!", "ERR_INVALID_INFO" => "Sorry, email or password could not be validated!", "ERR_URL_NOT_VALID" => "Sorry, the URL you entered is invalid!", "ERR_CAPTCHA" => "Sorry, captcha entered is incorrect!","ERR_KEY_WRONG" => "Sorry, confirm key is incorrect!","ERR_IPN_OK" => "Successfully updated IPN url!", "ERR_CONFIRM_OK" => "Successfully confirmed account!", "ERR_REGISTER_OK" => "Successfully created account! Please confirm it via your email address!", "ERR_UNCONFIRMED" => "Account not confirmed! Please confirm it first!");
+		$array = array("ERR_EXISTS" => "Sorry, email already exists in database!", "ERR_LOGIN_INCORRECT" => "Sorry, email or password incorrect!", "ERR_INVALID_INFO" => "Sorry, email or password could not be validated!", "ERR_URL_NOT_VALID" => "Sorry, the URL you entered is invalid!", "ERR_CAPTCHA" => "Sorry, captcha entered is incorrect!","ERR_KEY_WRONG" => "Sorry, confirm key is incorrect!","ERR_IPN_OK" => "Successfully updated IPN url!", "ERR_CONFIRM_OK" => "Successfully confirmed account!", "ERR_REGISTER_OK" => "Successfully created account! Please confirm it via your email address!", "ERR_UNCONFIRMED" => "Account not confirmed! Please confirm it first!", "ERR_OK" => "Action Successfully completed!");
 		return $array[$code];
 	}
 
 	public function matchCodeToType($code) {
-		$array = array("ERR_EXISTS" => "error", "ERR_LOGIN_INCORRECT" => "error", "ERR_INVALID_INFO" => "error", "ERR_CAPTCHA" => "error", "ERR_URL_NOT_VALID" => "error", "ERR_KEY_WRONG" => "error","ERR_IPN_OK" => "success", "ERR_CONFIRM_OK" => "success", "ERR_REGISTER_OK" => "success", "ERR_UNCONFIRMED" => "warning");
+		$array = array("ERR_EXISTS" => "error", "ERR_LOGIN_INCORRECT" => "error", "ERR_INVALID_INFO" => "error", "ERR_CAPTCHA" => "error", "ERR_URL_NOT_VALID" => "error", "ERR_KEY_WRONG" => "error","ERR_IPN_OK" => "success", "ERR_CONFIRM_OK" => "success", "ERR_REGISTER_OK" => "success", "ERR_UNCONFIRMED" => "warning", "ERR_OK" => "success");
 		return $array[$code];
 	}
 
@@ -654,6 +654,47 @@ class IOTAPaymentGateway {
 
 		$this->logEvent("ERR_OK", "Updated price for address ".$address." to ".$price_iota." for US dollar ".$price);
 		return $price_iota;
+
+	}
+
+	//API: return invoice data
+	public function returnJSONApi($code, $result) {
+
+		$return_array = array(
+			"content" => array(
+				$result
+				),
+			"code" => $code,
+			"message" =>  $this->matchCodeToMessage($code),
+			"boolean" => $this->matchCodeToType($code)
+			);
+
+		return json_encode($return_array);
+
+	}
+
+	//API: return invoice data
+	public function getInvoice($address) {
+		$db = $this->getDB();
+
+		$sql = "SELECT * FROM payments WHERE address = :address";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(":address", $address);
+		$stmt->execute();
+
+		
+		$invoice =  @call_user_func_array('array_merge', array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
+	
+		if (empty($invoice)) {
+			return "ERR_NOT_FOUND";
+		} else {
+			unset($invoice["verification"]);
+			unset($invoice["ipn_url"]);
+			unset($invoice["custom"]);
+			unset($invoice["realID"]);
+			return $invoice;
+		}
+
 
 	}
 
