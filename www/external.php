@@ -43,6 +43,7 @@ if (isset($_GET["address"])) {
 	echo "<br>";
 
 	echo "<p id='payment_waiting_message'>Waiting for payment.</p>";
+	echo "<p id='counter'></p>";
 }
 
 
@@ -50,6 +51,8 @@ if (isset($_GET["address"])) {
 </div>
 
 <script>
+first_run = true;
+
 function checkPayment() {
 	//get GET variables into javascript variables 
 	var parts = window.location.search.substr(1).split("&");
@@ -92,6 +95,12 @@ function checkPayment() {
 			document.getElementById("payment_waiting_message").innerHTML = "Payment canceled due to time limit! You are about to be redirect to " + cancel_url;
 			setTimeout(function () {redirectTo(cancel_url);}, 3000);
 		}
+
+		if (first_run) {
+			var countdown_seconds = (630427 - difference);
+			countdown(countdown_seconds);
+			first_run = false;
+		}
 	
 
 	  }
@@ -103,6 +112,23 @@ function checkPayment() {
 function redirectTo(url) {
 	window.location = url;
 }
+
+function countdown(seconds) {
+
+
+  function tick() {
+    seconds--; 
+    var counter = document.getElementById("counter");
+    var current_minutes = parseInt(seconds/60);
+    var current_seconds = seconds % 60;
+    counter.innerHTML = current_minutes + ":" + (current_seconds < 10 ? "0" : "") + current_seconds;
+    if( seconds > 0 ) {
+      setTimeout(tick, 1000);
+    } 
+  }
+  tick();
+}
+
 
 setInterval(function() {
   checkPayment();
