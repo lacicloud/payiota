@@ -263,6 +263,31 @@ class IOTAPaymentGateway {
 		return key(array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
 	}
 
+	public function getPaymentStatistics() {
+		$db = $this->getDB();
+		$sql = "SELECT count(*) FROM payments";
+		$stmt = $db->prepare($sql);
+		$stmt->execute();
+
+		$total = key(array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
+
+		$db = $this->getDB();
+		$sql = "SELECT count(*) FROM payments WHERE done = 1";
+		$stmt = $db->prepare($sql);
+		$stmt->execute();
+
+		$paid = key(array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
+
+		$db = $this->getDB();
+		$sql = "SELECT SUM(price_iota) FROM payments WHERE done = 1";
+		$stmt = $db->prepare($sql);
+		$stmt->execute();
+
+		$iotas = key(array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
+
+		return $total.":".$paid.":".$iotas;
+	}
+
 	public function getAddressStatus($address) {
 		$url = $this->getWorkingNode();
 

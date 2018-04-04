@@ -58,6 +58,8 @@ if (isset($_POST["api_key"])) {
 	echo $api->getUSDPrice($_GET["iota"]);
 } elseif (isset($_GET["action"]) and $_GET["action"] == "getnumberofusers") {
 	echo $api->getNumberOfUsers();
+} elseif (isset($_GET["action"]) and $_GET["action"] == "getpaymentstatistics") {
+	echo $api->getPaymentStatistics();
 } elseif (isset($_POST["action"]) and $_POST["action"] == "getinvoice") {
 	
 	if (!isset($_POST["invoice"])) {
