@@ -1,6 +1,6 @@
 <?php 
 //get your key(s) from DB or define at top of script
-define("PAYIOTA_VERIFICATION_KEY", "");
+define("PAYIOTA_VERIFICATION_STRING", "");
 
 if (isset($_POST["address"])) {
 	$address = $_POST["address"];
@@ -10,7 +10,7 @@ if (isset($_POST["address"])) {
 	$price_iota = $_POST["price_iota"];
 	//for more variables see documentation
 
-	if ($verification !== PAYIOTA_VERIFICATION_KEY) {
+	if ($verification !== PAYIOTA_VERIFICATION_STRING) {
 		die(1);
 	}
 

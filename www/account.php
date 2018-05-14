@@ -123,7 +123,7 @@ if (isset($_POST["email"]) and isset($_POST["password"]) and isset($_POST["passw
 						<div class="form-check tos_agreement">
 						  <label>
 							<input required type="checkbox" name="checkbox" id="terms_and_conditions_checkbox" value=""/>
-							I agree to the <a href="/docs/payiota_legal.pdf" target="_blank">Terms and Conditions</a>
+							I agree to the <a href="/resources/payiota_legal.pdf" target="_blank">Terms and Conditions</a>
 						  </label>
 						</div>
 						<input type="submit" value="Register My Account"></li>  

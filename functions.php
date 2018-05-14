@@ -568,7 +568,7 @@ class IOTAPaymentGateway {
 					return $this->getUSDPrice($amount);
 			}
 
-			$url = 'https://finance.google.com/finance/converter?a='.$amount.'&from='.$from.'&to='.$to;
+			$url = 'https://free.currencyconverterapi.com/api/v5/convert?q='.$from.'_'.$to.'&compact=y';
 
 			$curl = curl_init();
 			curl_setopt_array($curl, array(
@@ -579,12 +579,15 @@ class IOTAPaymentGateway {
 			curl_close($curl);
 			
 			if (!$data) {
-				$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal Google Finance error: ".$data);
+				$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal currency API error ".$data);
 				return "ERR_FATAL_3RD_PARTY";
 			}
 			
-			preg_match("/<span class=bld>(.*)<\/span>/",$data, $converted);
-			$converted = preg_replace("/[^0-9.]/", "", $converted[1]);
+			
+			$data = json_decode($data, true);
+			$rate = $data[$from."_".$to]["val"];
+			
+			$converted = $amount * $rate;
 			return round($converted, 3);
 	}
 
