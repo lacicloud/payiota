@@ -21,14 +21,14 @@ define("PAYIOTA_SUBSCRIPTION_PRICE", 12); //USD
 ini_set('default_socket_timeout', 7);
 ignore_user_abort(true);
 
-
+/*
 set_exception_handler(function ($e) {
 	chdir(ROOT);
 	error_log("Unhandled exception occured, error: ".$e." POST: ".print_r($POST, true)." GET: ".print_r($_GET, true), 3, "logs/payiota.log");
 	echo "Sorry, a fatal error has occured, service is unavailable!";
 	die(1);
 });
-
+*/
 class IOTAPaymentGateway {
 
 	public function getWorkingNode() {
@@ -397,7 +397,7 @@ class IOTAPaymentGateway {
 					$message = Swift_Message::newInstance("$title");
 					$message 
 						->setSubject($subject)
-						->setFrom(array("bot@lacicloud.net" => "PayIOTA"))
+						->setFrom(array("bot@lacicloud.net" => "PayIOTA.me"))
 						->setTo(array("$to"))
 						->setCharset('utf-8') 
 						->setBody($body, 'text/html');
@@ -475,6 +475,8 @@ class IOTAPaymentGateway {
 	}
 
 	public function createAccount($email, $password) {
+		$api_payments = new Payments;
+
 		$email =  trim($email);
 		
 		//verify data
@@ -512,6 +514,8 @@ class IOTAPaymentGateway {
 		$stmt->bindParam(':confirmed', $verification_email);
 		$stmt->bindParam(':count', $count);
 		$stmt->execute();
+
+		$api_payments->generateInvoiceForUser($this->matchEmailtoID($email));
 
 		return "ERR_REGISTER_OK";
 	}
@@ -593,6 +597,18 @@ class IOTAPaymentGateway {
 		} else {
 			return $id;
 		}
+	}
+
+	public function matchEmailtoID($email) {
+		$db = $this->getDB();
+		$sql = "SELECT id FROM users WHERE email = :email";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(":email", $email);
+		$stmt->execute();
+
+		$id = key(array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
+		
+		return $id;
 	}
 
 	public function convertCurrency($amount, $from, $to) {
@@ -1263,7 +1279,7 @@ class Payments extends IOTAPaymentGateway {
 	public function generateInvoiceForUser($id) {
 		$api = new IOTAPaymentGateway;
 
-		//check if it already exists for this month
+		//check if it already exists for this year
 		$db = $api->getDB();
 
 		$sql = "SELECT date FROM subscriptions WHERE realID = :realID";
