@@ -4,10 +4,13 @@ require("../functions.php");
 require("securimage/securimage.php");
 $api = new IOTAPaymentGateway;
 
+if (isset($_SESSION["logged_in"]) and $_SESSION["logged_in"] == 1) {
+  header("Location: /interface.php");
+}
+
 if (isset($_POST["email"]) and isset($_POST["password"]) and !isset($_POST["password_retyped"])) {
 	$result = $api->loginUser($_POST["email"], $_POST["password"]);
 	if (is_numeric($result)) {
-		$_SESSION["logged_in"] = 1;
 		$_SESSION["id"] = $result;
 		header("Location: /interface.php");
 		die(0);
@@ -41,7 +44,7 @@ if (isset($_POST["email"]) and isset($_POST["password"]) and isset($_POST["passw
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>PayIOTA - Account</title>
+		<title>PayIOTA.me - Account</title>
 		<?php include('header.php'); ?>
 
 	</head>

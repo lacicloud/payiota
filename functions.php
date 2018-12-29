@@ -1,19 +1,30 @@
 <?php 
 require("libs/SwiftMailer/lib/swift_required.php");
+require("libs/PayPal/PaypalIPN.php");
 
 define('ROOT', dirname(__FILE__));
-define('SALT', "12345678");
-define("EMAIL_USERNAME", "username");
-define("EMAIL_PASSWORD", "password");
-define("MYSQL_USERNAME", "username");
-define("MYSQL_PASSWORD", "password");
+define('SALT', "");
+define("EMAIL_USERNAME", "");
+define("EMAIL_PASSWORD", "");
+define("MYSQL_USERNAME", "");
+define("MYSQL_PASSWORD", "");
+define("PAYIOTA_IPN_URL", "https://payiota.me/payment_system/payiota.php");
+define("PAYIOTA_API_KEY", "");
+define("PAYIOTA_VERIFICATION_KEY", "");
+define("PAYPAL_API_USER", "");
+define("PAYPAL_API_PASSWORD", "");
+define("PAYPAL_API_SIGNATURE", "");
+define("PAYIOTA_ID", 574);
+define("LACICLOUD_ID", 6);
+define("PAYIOTA_SUBSCRIPTION_PRICE", 12); //USD
 
 ini_set('default_socket_timeout', 7);
 ignore_user_abort(true);
 
+
 set_exception_handler(function ($e) {
 	chdir(ROOT);
-	error_log("Unhandled exception occured: ".$e, 3, "logs/payiota.log");
+	error_log("Unhandled exception occured, error: ".$e." POST: ".print_r($POST, true)." GET: ".print_r($_GET, true), 3, "logs/payiota.log");
 	echo "Sorry, a fatal error has occured, service is unavailable!";
 	die(1);
 });
@@ -22,6 +33,9 @@ class IOTAPaymentGateway {
 
 	public function getWorkingNode() {
 		$nodes = array(
+			"https://nodes.thetangle.org:443",
+			"https://pow6.iota.community/",
+			"https://potato.iotasalad.org:14265",
 			"http://iotanode.party:14265/",
 			"http://node.lukaseder.de:14265",
 			"http://node01.iotatoken.nl:14265",
@@ -264,28 +278,36 @@ class IOTAPaymentGateway {
 	}
 
 	public function getPaymentStatistics() {
+		
 		$db = $this->getDB();
+
 		$sql = "SELECT count(*) FROM payments";
 		$stmt = $db->prepare($sql);
 		$stmt->execute();
 
 		$total = key(array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
 
-		$db = $this->getDB();
+
 		$sql = "SELECT count(*) FROM payments WHERE done = 1";
 		$stmt = $db->prepare($sql);
 		$stmt->execute();
 
 		$paid = key(array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
 
-		$db = $this->getDB();
+
 		$sql = "SELECT SUM(price_iota) FROM payments WHERE done = 1";
 		$stmt = $db->prepare($sql);
 		$stmt->execute();
 
 		$iotas = key(array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
 
-		return $total.":".$paid.":".$iotas;
+		$sql = "SELECT SUM(price) FROM payments WHERE done = 1";
+		$stmt = $db->prepare($sql);
+		$stmt->execute();
+
+		$dollars = key(array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
+
+		return $total.":".$paid.":".$iotas.":".$dollars;
 	}
 
 	public function getAddressStatus($address) {
@@ -363,7 +385,7 @@ class IOTAPaymentGateway {
 	public function sendEmail($to, $subject, $body) {
 
 		try {
-					//sends email to user about signup
+					//sends email to user about signup/payment
 					$title = "PayIOTA_Email";
 				    $transport = Swift_SmtpTransport::newInstance(gethostbyname("mail.gandi.net"), 465, "ssl") 
 						->setUsername(EMAIL_USERNAME)
@@ -379,6 +401,9 @@ class IOTAPaymentGateway {
 						->setTo(array("$to"))
 						->setCharset('utf-8') 
 						->setBody($body, 'text/html');
+					if ($subject == "PayIOTA.me - Thank You For Paying") {
+						$message->setBcc(array("laci@lacicloud.net" => "Laci"));
+					}
 					$mailer->send($message, $errors);
 					$result = "ERR_OK";
 		} catch(\Swift_TransportException $e){
@@ -468,7 +493,7 @@ class IOTAPaymentGateway {
 		$verification = $this->getNewVerificationString();
 		$verification_email = $this->getNewVerificationEmailString();
 
-		$this->sendEmail($email, "PayIOTA - Confirm Account",  "<html><body><p>Hi there!</p><p>To confirm your account, please click <a href='https://payiota.me/confirm.php?key=".$verification_email."'>here</a>.</p><p>Thanks!</p></body></html>");
+		$this->sendEmail($email, "PayIOTA.me - Confirm Account",  "<html><body><p>Hi there!</p><p>To confirm your account, please click <a href='https://payiota.me/confirm.php?key=".$verification_email."'>here</a>.</p><p>Best Regards,<br>PayIOTA.me</p></body></html>");
 
 		//empty by default
 		$ipn_url = '';
@@ -553,19 +578,33 @@ class IOTAPaymentGateway {
 		}
 
 	public function matchAPItoID($api_key) {
+		$api_payments = new Payments;
+
 		$db = $this->getDB();
 		$sql = "SELECT id FROM users WHERE api_key = :api_key";
 		$stmt = $db->prepare($sql);
 		$stmt->bindParam(":api_key", $api_key);
 		$stmt->execute();
 
-		return key(array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
+		$id = key(array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
+
+		if (is_int($id) and $api_payments->isAPIKeyDisabled($id) == true) {
+			return "ERR_API_KEY_DISABLED";
+		} else {
+			return $id;
+		}
 	}
 
 	public function convertCurrency($amount, $from, $to) {
 			
 			if ($from == "IOTA") {
-					return $this->getUSDPrice($amount);
+					$price = $this->getUSDPrice($amount);
+					if ($price == "ERR_FATAL_3RD_PARTY") {
+						$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal currency API error for getting USD price from IOTA ".$price);
+						return "ERR_FATAL_3RD_PARTY";
+					} else {
+						return $price;
+					}
 			}
 
 			$url = 'https://free.currencyconverterapi.com/api/v5/convert?q='.$from.'_'.$to.'&compact=y';
@@ -578,7 +617,7 @@ class IOTAPaymentGateway {
 			$data = curl_exec($curl);
 			curl_close($curl);
 			
-			if (!$data) {
+			if (!$data or $data == '{"status":403,"error":"The system has automatically blocked you for exceeding the limit."}') {
 				$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal currency API error ".$data);
 				return "ERR_FATAL_3RD_PARTY";
 			}
@@ -596,6 +635,10 @@ class IOTAPaymentGateway {
 		$convert_miota = $iota / 1000000;
 	
 		$data = $this->getCMP();
+
+		if ($data == "ERR_FATAL_3RD_PARTY") {
+			return "ERR_FATAL_3RD_PARTY";
+		}
 
 		$data = json_decode($data, true);
 		$price_usd = (double)$data[0]["price_usd"];
@@ -628,6 +671,10 @@ class IOTAPaymentGateway {
 		//to get it in IOTA, multiply MIOTA by million
 		$data = $this->getCMP();
 
+		if ($data == "ERR_FATAL_3RD_PARTY") {
+			return "ERR_FATAL_3RD_PARTY";
+		}
+
 		$data = json_decode($data, true);
 
 		$price_usd = (double)$data[0]["price_usd"];
@@ -636,7 +683,7 @@ class IOTAPaymentGateway {
 		$iota = (int)round($iota);
 
 		if ($iota < 1) {
-			$iota = 1;
+			return 1;
 		}
 
 		return $iota; 
@@ -670,15 +717,18 @@ class IOTAPaymentGateway {
 			return "ERR_FATAL_3RD_PARTY";
 		}
 
+		$created = time();
+
 		//now update price
 		$db = $this->getDB();	
-		$sql = "UPDATE payments SET price_iota = :price_iota WHERE address = :address";
+		$sql = "UPDATE payments SET price_iota = :price_iota, created = :created WHERE address = :address";
 		$stmt = $db->prepare($sql);
 		$stmt->bindParam(":price_iota", $price_iota);
+		$stmt->bindParam(":created", $created);
 		$stmt->bindParam(":address", $address);
 		$stmt->execute();
 
-		$this->logEvent("ERR_OK", "Updated price for address ".$address." to ".$price_iota." for US dollar ".$price);
+		$this->logEvent("ERR_OK", "Updated price for address ".$address." to ".$price_iota." and created to ".$created." for US dollar ".$price);
 		return $price_iota;
 
 	}
@@ -737,7 +787,7 @@ class IOTAPaymentGateway {
 		//no default IPN url was set and no custom IPN url was specified
 		if ($ipn_url == "") {
 			echo "ERR_IPN_URL_INVALID";
-			die(0);
+			die(1);
 		}
 
 		//make sure nodes are online
@@ -784,21 +834,25 @@ class IOTAPaymentGateway {
 		return json_encode(array($address, $price_iota));
 	}
 
-	public function getAddressesTotal($id) {
+	public function getAddressBalances($id) {
 		$db = $this->getDB();
-		$sql = "SELECT address FROM payments WHERE realID = :id";
+		$sql = "SELECT address FROM payments WHERE realID = :id AND done = 1";
 		$stmt = $db->prepare($sql);
 		$stmt->bindParam(":id", $id);
 		$stmt->execute();
 		
 		$data = $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC);
 
-		$balance = 0;
+		$total_balance = 0;
+		$detailed_balance = array();
+
 		foreach ($data as $key => $value) {
-			$balance = $balance + $this->getAddressBalance($key);
+			$balance = $this->getAddressBalance($key);
+			$total_balance = $total_balance + $balance;
+			$detailed_balance[$key] = $balance;
 
 		}
-		return $balance;
+		return array($total_balance, $detailed_balance);
 
 	}
 
@@ -840,7 +894,7 @@ class IOTAPaymentGateway {
 		$address = $data["address"];
 		$price_iota = $data["price_iota"];
 
-		//check time (invoices can last a maximum of 1 week)
+		//check time (invoices can last a maximum of 1 week, unless renewed by updatePriceForAddress)
 		$created = (int)$data["created"];
 		$current = time();
 
@@ -922,4 +976,350 @@ class IOTAPaymentGateway {
 		return "ERR_OK";
 	}
 }
+
+class Payments extends IOTAPaymentGateway {
+
+	public function displayPaymentStatusToUser($id) {
+		$api = new IOTAPaymentGateway;
+
+		$db = $api->getDB();
+		$sql = "SELECT realID, date, address, amount, done, created FROM subscriptions WHERE realID = :realID";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(":realID", $id);
+		$stmt->execute();
+
+		$data = $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC);
+
+		if (!isset($data[$id])) {
+			print "<p style='color: green'>Everything is paid!</p>";
+			return;
+		}
+
+		$data = $data[$id];
+		
+		$count_of_unpaid_invoices = 0;
+		$count_of_due_invoices = 0;
+
+		foreach ($data as $key => $value) {
+			if ($value["done"] == 0 and ((int)$value["created"] - time()) > 2629743 ) {
+				$count_of_unpaid_invoices++;
+			} else if ($value["done"] == 0 and ((int)$value["created"] - time()) < 2629743 ) {
+				$count_of_due_invoices++;
+			}
+		}
+
+		if ($count_of_unpaid_invoices > 0) {
+			print "<p style='color: red'>API is locked out due to missed invoice(s)!</p>";
+		} else if ($count_of_due_invoices > 0) {
+			print "<p style='color: orange'>Please pay for your invoice!</p>";
+		} else {
+			print "<p style='color: green'>Everything is paid!</p>";
+		}
+		
+		//fix anachronism
+		$data = array_reverse($data);
+
+		foreach ($data as $key => $value) {
+			
+			print("Invoice for: ".$value["date"]);
+			print("<br>");
+			print("Address is: ".$value["address"]);
+			print("<br>");
+			print("Amount for: ".$value["amount"]." in IOTA and ".PAYIOTA_SUBSCRIPTION_PRICE." in USD");
+			print("<br>");
+			print("Due by: ". date("F j, Y, g:i a", (int)$value["created"] + 2629743));
+			print("<br>");
+			print("Paid: ".$value["done"]);
+			if ($value["done"] == 0) {
+				print("<br><br>");
+				print("<a href='https://payiota.me/external.php?address=".$value["address"]."'>Pay Now using PayIOTA.me</a>");
+				print("<br><br>");
+				if (isset($_GET["paypal"]) and $_GET["paypal"] == "true" and $_SESSION["paypalclear"] == false and isset($_GET["address"]) and $_GET["address"] == $value["address"]) {
+					$this->getPayPalAddress(PAYIOTA_SUBSCRIPTION_PRICE, $id, $value["address"]);
+					print("
+						<script>
+						var forms = document.getElementsByTagName('form');
+						for (var i=0; i<forms.length; i++) 
+						forms[i].submit();
+						</script>
+
+						");
+					$_SESSION["paypalclear"] = true;
+				} else {
+					$_SESSION["paypalclear"] = false;
+					print("<a href='https://payiota.me/subscription.php?paypal=true&address=".$value["address"]."'>Pay Now using PayPal</a>");
+				}
+				
+			} else {
+				print("<br><br>");
+				print("<a href='https://iotasear.ch/hash/".$value["address"]."'>View Payment (if paid using PayIOTA.me)</a>");
+			}
+
+			if (isset($_GET["type"]) and $_GET["type"] == "paypal" and isset($_GET["result"]) and $_GET["result"] == "cancel") {
+				print("
+					<script>
+					alert('PayPal payment not accepted, please try again!');
+					</script>");
+			} else if (isset($_GET["type"]) and $_GET["type"] == "paypal" and isset($_GET["result"]) and $_GET["result"] == "success") {
+				print("
+					<script>
+					alert('PayPal payment successfully accepted, your subscription will be updated soon!');
+					</script>");
+			}
+
+			print("<br><br>");
+
+		}
+	}
+
+	public function getPayPalAddress($price, $id, $address) {
+
+		$sendPayData = array(
+		    "METHOD" => "BMCreateButton",
+		    "VERSION" => "95.0",
+		    "USER" => PAYPAL_API_USER,
+		    "PWD" => PAYPAL_API_PASSWORD,
+		    "SIGNATURE" => PAYPAL_API_SIGNATURE,
+		    "BUTTONCODE" => "ENCRYPTED",
+		    "BUTTONTYPE" => "BUYNOW",
+		    "BUTTONSUBTYPE" => "SERVICES",
+		    "L_BUTTONVAR1" => "item_number=".$price.$id,
+		    "L_BUTTONVAR2" => "item_name=PayIOTA.me Yearly Subscription for ".date('Y'),
+		    "L_BUTTONVAR3" => "amount=".$price,
+		    "L_BUTTONVAR4" => "currency_code=USD",
+		    "L_BUTTONVAR5" => "no_shipping=1",
+		    "L_BUTTONVAR6" => "no_note=1",
+		    "L_BUTTONVAR7" => "notify_url=https://payiota.me/payment_system/paypal.php",
+		    "L_BUTTONVAR8" => "cancel_return=https://payiota.me/subscription.php?type=paypal&result=cancel",
+		    "L_BUTTONVAR9" => "return=https://payiota.me/subscription.php?type=paypal&result=success",
+		    "L_BUTTONVAR10" => "subtotal=".$price,
+		    "L_BUTTONVAR11" => "custom=".$id.":".$address.":".date('Y')
+		);
+
+		$curl = curl_init();
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+		curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+		
+		$paydata = http_build_query($sendPayData);
+
+		curl_setopt($curl,CURLOPT_POST, 1);
+		curl_setopt($curl,CURLOPT_POSTFIELDS, $paydata);
+
+		curl_setopt($curl, CURLOPT_URL, 'https://api-3t.paypal.com/nvp?');
+		$nvpPayReturn = curl_exec($curl);
+
+		parse_str($nvpPayReturn, $return);
+		print($return["WEBSITECODE"]);
+	}
+
+	public function isAPIKeyDisabled($id) {
+		$api = new IOTAPaymentGateway;
+
+		$db = $api->getDB();
+		$sql = "SELECT realID, done, created FROM subscriptions WHERE realID = :realID";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(":realID", $id);
+		$stmt->execute();
+
+		$data = $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC);
+
+		if (!isset($data[$id])) {
+			return false;
+		}
+
+		$data = $data[$id];
+		
+		$count_of_unpaid_invoices = 0;
+
+		//only counts as unpaid if difference is bigger than one month between creation and now
+		foreach ($data as $key => $value) {
+			if ($value["done"] == 0 and ((int)$value["created"] - time()) > 2629743) {
+				$count_of_unpaid_invoices++;
+			}
+		}
+
+		if ($count_of_unpaid_invoices > 0) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	//when to call? Every year, by cron.
+	public function generateInvoicesForUsers() {
+		$api = new IOTAPaymentGateway;
+
+		$db = $api->getDB();
+
+		$sql = "SELECT id FROM users";
+		$stmt = $db->prepare($sql);
+		$stmt->execute();
+
+		$data = $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC);
+
+		foreach ($data as $key => $value) {
+			$id = $key;
+			if ($id !== PAYIOTA_ID and $id !== LACICLOUD_ID) {
+				$this->generateInvoiceForUser($id);
+			}
+			
+		}
+	}
+
+	//called every week by cron.
+	public function updateInvoicesForUsers() {
+			$api = new IOTAPaymentGateway;
+
+			$db = $api->getDB();
+
+			$sql = "SELECT id FROM users";
+			$stmt = $db->prepare($sql);
+			$stmt->execute();
+
+			$data = $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC);
+
+			foreach ($data as $key => $value) {
+				$id = $key;
+				if ($id !== PAYIOTA_ID and $id !== LACICLOUD_ID) {
+					$this->updateInvoiceForUser($id);
+				}
+				
+			}
+	}
+
+	public function updateInvoiceForUser($id) {
+			
+			$api = new IOTAPaymentGateway;
+
+			$db = $api->getDB();
+			$sql = "SELECT realID, address FROM subscriptions WHERE realID = :realID AND done = 0";
+			$stmt = $db->prepare($sql);
+			$stmt->bindParam(":realID", $id);
+			$stmt->execute();
+
+			$data = $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC);
+
+			//nothing to update
+			if (!isset($data[$id])) {
+				return;
+			}
+
+			$data = $data[$id];
+			foreach ($data as $key => $value) {
+				$address = $value["address"];
+
+				$request = array(
+					"api_key" => PAYIOTA_API_KEY,
+					"address" => $address,
+					"verification" => PAYIOTA_VERIFICATION_KEY,
+					"action" => "update"
+					);
+
+				$curl = curl_init();
+				curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+				
+				$request = http_build_query($request);
+				curl_setopt($curl,CURLOPT_POST, 1);
+				curl_setopt($curl,CURLOPT_POSTFIELDS, $request);
+
+				curl_setopt($curl, CURLOPT_URL, 'https://payiota.me/api.php');
+			
+				//new price as an integer
+				$response = curl_exec($curl);
+
+				if (is_numeric($response)) {
+					//update it in DB, does not touch created as that is used internally for due checking	
+
+					$sql = "UPDATE subscriptions SET amount = :amount WHERE address = :address";
+					$stmt = $db->prepare($sql);
+					$stmt->bindParam(":amount", $response);
+					$stmt->bindParam(":address", $address);
+					$stmt->execute();
+
+
+				}
+
+
+
+
+			}
+
+
+
+	}
+
+	public function updateInvoiceToPaid($address) {
+		$api = new IOTAPaymentGateway;
+
+		$db = $api->getDB();
+
+		$sql = "UPDATE subscriptions SET done = 1 WHERE address = :address";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(":address", $address);
+		$stmt->execute();
+	}
+
+	public function generateInvoiceForUser($id) {
+		$api = new IOTAPaymentGateway;
+
+		//check if it already exists for this month
+		$db = $api->getDB();
+
+		$sql = "SELECT date FROM subscriptions WHERE realID = :realID";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(":realID", $id);
+		$stmt->execute();
+
+
+		//check already existing invoices
+		$date = key(array_map('reset',array_reverse($stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC))));
+		if ($date == date('Y')) {
+				return;
+		}
+
+		$date = date('Y');
+		$custom = $id.":".$date;
+
+		$request = array(
+			"api_key" => PAYIOTA_API_KEY,
+			"price" => PAYIOTA_SUBSCRIPTION_PRICE,
+			"currency" => "USD",
+			"custom" => $custom,
+			"ipn_url" => PAYIOTA_IPN_URL,
+			"action" => "new"
+			);
+
+		$curl = curl_init();
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+		
+		$request = http_build_query($request);
+		curl_setopt($curl,CURLOPT_POST, 1);
+		curl_setopt($curl,CURLOPT_POSTFIELDS, $request);
+
+		curl_setopt($curl, CURLOPT_URL, 'https://payiota.me/api.php');
+		$response = curl_exec($curl);
+
+		$response = json_decode($response, true);
+		$address = $response[0];
+		$price = $response[1];
+		$realID  = $id;
+		$created = time();
+		$done = 0;
+
+		$sql = "INSERT INTO subscriptions (date, address, amount, done, realID, created) VALUES (:date, :address, :amount, :done, :realID, :created)";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(":date", $date);
+		$stmt->bindParam(":address", $address);
+		$stmt->bindParam(":amount", $price);
+		$stmt->bindParam(":done", $done);
+		$stmt->bindParam(":realID", $realID);
+		$stmt->bindParam(":created", $created);
+		$stmt->execute();
+
+	}
+
+
+}
+
 ?>

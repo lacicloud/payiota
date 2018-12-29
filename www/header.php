@@ -14,7 +14,7 @@
 	<script src="/js/popper.min.js"></script>
 	<script src="/js/main.js"></script>
 	
-	<!-- Bootstrap popup boxex -->
+	<!-- Bootstrap popup boxes -->
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.4.0/bootbox.min.js"></script>
 
 	<!-- Fonts -->

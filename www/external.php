@@ -34,15 +34,17 @@ if (isset($_GET["address"])) {
 
 	if (!isset($price_iota)) {
 		echo "Error, no such invoice!";
-		die(0);
+		die(1);
 	}
 
-	echo "Please pay ".$price_iota." IOTA's to address ".$address." !";
+	echo "<h2>IOTA Payment</h2>";
 	echo "<br>";
+	echo "Please pay ".$price_iota." IOTA's to address ".$address." to complete the checkout!";
+	echo "<br><br>";
 	echo '	<div id="qrcode" ></div><script>new QRCode(document.getElementById("qrcode"), JSON.stringify ( { "address" : "'.$address.'", "amount" : "'.$price_iota.'", "tag" : "" } ) );</script>';
 	echo "<br>";
 
-	echo "<p id='payment_waiting_message'>Waiting for payment.</p>";
+	echo "<p id='payment_waiting_message'>Waiting for payment!</p>";
 	echo "<p id='counter'></p>";
 }
 
@@ -82,7 +84,8 @@ function checkPayment() {
 	  var created = obj["content"][0]["created"];
 
 	  if (status == 1)  {
-	  	document.getElementById("payment_waiting_message").innerHTML = "Payment accepted! You are about to be redirect to " + success_url;
+	  	document.getElementById("payment_waiting_message").innerHTML = "<strong>Payment accepted! You are about to be redirect to " + success_url + "!</strong>";
+	  	clearInterval(interval);
 	  	setTimeout(function () {redirectTo(success_url);}, 3000);
 	  //if expired then go to cancel url
 	  } else if (status == 0) {
@@ -92,7 +95,8 @@ function checkPayment() {
 
 		//1 week currently
 		if (difference > 630427) {
-			document.getElementById("payment_waiting_message").innerHTML = "Payment canceled due to time limit! You are about to be redirect to " + cancel_url;
+			document.getElementById("payment_waiting_message").innerHTML = "<strong>Payment canceled due to time limit! You are about to be redirect to " + cancel_url + "!</strong>";
+			clearInterval(interval);
 			setTimeout(function () {redirectTo(cancel_url);}, 3000);
 		}
 
@@ -129,8 +133,9 @@ function countdown(seconds) {
   tick();
 }
 
+var interval = null;
 
-setInterval(function() {
+interval = setInterval(function() {
   checkPayment();
 }, 5000)
 </script>

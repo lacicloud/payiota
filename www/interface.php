@@ -9,6 +9,16 @@ if (isset($_GET["logout"])) {
 	die(0);
 }
 
+//session expiration
+if (isset($_SESSION['FIRST_ACTIVITY']) && (time() - $_SESSION['FIRST_ACTIVITY'] > 1800)) {
+    session_destroy();
+    header("Location: /account.php");
+    die(0);
+} elseif (!isset($_SESSION["FIRST_ACTIVITY"])) {
+    $_SESSION['FIRST_ACTIVITY'] = time(); //first activity timestamp
+}
+
+
 $id = $_SESSION["id"];
 if (!is_numeric($id)) {
 	header("Location: /account.php");
@@ -21,9 +31,12 @@ $count = $api->countInvoicesByID($id);
 
 
 if (!isset($_SESSION["total_balance"]) or isset($_GET["refresh"])) {
-	$_SESSION["total_balance"] = $api->getAddressesTotal($id);
+	$_SESSION["total_balance"] = $api->getAddressBalances($id);
 }
-$total_balance = $_SESSION["total_balance"];
+$balance_array = $_SESSION["total_balance"];
+
+$total_balance = $balance_array[0];
+$detailed_balance = $balance_array[1];
 
 if (isset($_POST["ipn_url_new"])) {
 	$result = $api->updateIPN($id, $_POST["ipn_url_new"]);
@@ -92,9 +105,10 @@ if (isset($_POST["ipn_url_new"])) {
 		  <tr><td>Total balance:</td><td class="api_data"><?php echo $total_balance; ?> &nbsp (IOTA)</td></tr>
 		</table>
 
-		<a href="?refresh=true">Refresh Balance</a>
+		<a href="?refresh=true">Refresh Data</a>
 		<a href="?hide_empty=true">Hide Empty</a>
 		<a href="?hide_empty=false">Unhide Empty</a>
+		<a href="/subscription.php">Payment Manager</a>
 
 		<h4>Update IPN URL:</h4>
 		<form action="#" method="POST" onsubmit="return ValidateURL(this);">
@@ -113,7 +127,7 @@ if (isset($_POST["ipn_url_new"])) {
 <table class="table table-striped table-responsive">
   <thead>
     <tr>
-      <th>API Call #</th>
+      <th>API Call # and Invoice</th>
       <th>Address</th>
       <th>Price (USD)</th>
       <th>Price in IOTA</th>
@@ -127,15 +141,27 @@ if (isset($_POST["ipn_url_new"])) {
 	<?php 
 	$count = 0;
 	foreach ($data_payment as $key => $value) {
-		$balance = $api->getAddressBalance($value[0]["address"]);
+		
+		if ($value[0]["done"] == 1) {
+			$balance = $detailed_balance[$value[0]["address"]];
+		} else {
+			$balance = 0;
+		}
+		
 		if ($balance == 0 and isset($_GET["hide_empty"]) and $_GET["hide_empty"] == "true") {
 			continue;
 		}
-		$status = $api->getAddressStatus($value[0]["address"]);
+
+		if ($value[0]["done"] == 1) {
+			$status = "TX";
+		} else {
+			$status = "NOTX";
+		}
+		
 
 		echo "
 		<tr>
-		  <th scope='row'>".$count."</th>
+		  <th scope='row'><a href='https://payiota.me/external.php?address=".$value[0]["address"]."&success_url=/interface.php&cancel_url=/interface.php'>".$count."</a></th>
 		  <td><a href='https://iotasear.ch/hash/".$value[0]["address"]."' target='_blank'>".$value[0]["address"]."</a></td>
 		  <td><span>Price (USD)</span>		$".$value[0]["price"]."</td>
 		  <td><span>Price in IOTA</span>	".$value[0]["price_iota"]."</td>
