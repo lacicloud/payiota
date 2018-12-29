@@ -21,14 +21,13 @@ define("PAYIOTA_SUBSCRIPTION_PRICE", 12); //USD
 ini_set('default_socket_timeout', 7);
 ignore_user_abort(true);
 
-/*
 set_exception_handler(function ($e) {
 	chdir(ROOT);
 	error_log("Unhandled exception occured, error: ".$e." POST: ".print_r($POST, true)." GET: ".print_r($_GET, true), 3, "logs/payiota.log");
 	echo "Sorry, a fatal error has occured, service is unavailable!";
 	die(1);
 });
-*/
+
 class IOTAPaymentGateway {
 
 	public function getWorkingNode() {
