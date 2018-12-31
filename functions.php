@@ -1288,7 +1288,8 @@ class Payments extends IOTAPaymentGateway {
 
 
 		//check already existing invoices
-		$date = key(array_map('reset',array_reverse($stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC))));
+		$date = key($stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC));
+		
 		if ($date == date('Y')) {
 				return;
 		}
