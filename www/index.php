@@ -137,7 +137,7 @@ $api = new IOTAPaymentGateway;
 			<hr class="section-heading-spacer">
 			<div class="clearfix"></div>
 			<h2 class="section-heading">Your Secure Payment Gateway for 12$</h2>
-			<p class="lead">PayIOTA helps web merchants accept IOTA payments easily on their websites with no fees, only a yearly membership contribution of 12$.
+			<p class="lead">PayIOTA helps web merchants accept IOTA payments easily on their websites with no fees, only a yearly membership contribution of 12$ (there is a 1 month trial period for you to test our service).
 			The <a href="https://github.com/lacicloud/payiota/wiki/PayIOTA-API-Documentation">PayIOTA API</a> helps you accept payments for products and services on your own website(s). PayIOTA is powered by <a href="https://lacicloud.net">LaciCloud</a>.
 			<br><br>PayIOTA is a collaboration of IOTA supporters from around the world, who want to help you unlock the power of fee-less payments.
 			PayIOTA is available as a <a href="https://github.com/lacicloud/payiota-woocommerce/">Woocommerce Plugin</a> for Wordpress, and as a <a href="https://github.com/lacicloud/payiota-whmcs/">WHMCS plugin</a>, with more platforms to be supported as demand permits.</p>

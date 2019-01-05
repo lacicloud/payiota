@@ -16,6 +16,13 @@
 <?php
 $_GET = array_map('htmlspecialchars', $_GET);
 
+//set language
+if (!isset($_GET["lang"])) {
+	$language = "en";
+} else {
+	$language = $_GET["lang"];
+}
+
 //new system is fully compatible with legacy version
 if (isset($_GET["address"])) {
 

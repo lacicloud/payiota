@@ -77,7 +77,7 @@ if (isset($_POST["api_key"])) {
 		die(1);
 	}
 
-	$result = $api->getInvoice($_POST["invoice"]);
+	$result = $api->getInvoice($_POST["invoice"], false);
 
 	if (!is_array($result)) {
 		echo "ERR_NOT_FOUND";
@@ -93,7 +93,7 @@ if (isset($_POST["api_key"])) {
 		die(1);
 	}
 
-	$data = $api->getInvoice($_POST["invoice"]);
+	$data = $api->getInvoice($_POST["invoice"], true);
 
 	if (!is_array($data)) {
 		echo "ERR_NOT_FOUND";

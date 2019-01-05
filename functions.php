@@ -784,7 +784,7 @@ class IOTAPaymentGateway {
 	}
 
 	//API: return invoice data
-	public function getInvoice($address) {
+	public function getInvoice($address, $trusted) {
 		$db = $this->getDB();
 
 		$sql = "SELECT * FROM payments WHERE address = :address";
@@ -798,10 +798,13 @@ class IOTAPaymentGateway {
 		if (empty($invoice)) {
 			return "ERR_NOT_FOUND";
 		} else {
-			unset($invoice["verification"]);
-			unset($invoice["ipn_url"]);
-			unset($invoice["custom"]);
-			unset($invoice["realID"]);
+			if ($trusted == false) {
+				unset($invoice["verification"]);
+				unset($invoice["ipn_url"]);
+				unset($invoice["custom"]);
+				unset($invoice["realID"]);
+			}
+			
 			return $invoice;
 		}
 
@@ -942,7 +945,7 @@ class IOTAPaymentGateway {
 			$this->logEvent("ERR_OK", "Sent IPN and updated done to 1 for address ".$address);
 		}
 
-		return ($this->getInvoice($address));
+		return ($this->getInvoice($address, false));
 	}		
 
 	public function countInvoicesByID($id) {
@@ -990,19 +993,20 @@ class IOTAPaymentGateway {
 	public function sendIPN($data, $balance) {
 		$data["paid_iota"] = $balance;
 		$data["done"] = 1;
-
+		
 		$post_data = http_build_query($data);
 
 		$ch = curl_init();
 		curl_setopt($ch,CURLOPT_URL, $data["ipn_url"]);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
 		curl_setopt($ch,CURLOPT_POST, 1);
 		curl_setopt($ch,CURLOPT_POSTFIELDS, $post_data);
 		curl_setopt($ch, CURLOPT_REFERER, 'https://payiota.me');
-		curl_setopt($ch, CURLOPT_USERAGENT, 'PayIOTA IPN'); 
+		curl_setopt($ch, CURLOPT_USERAGENT, 'PayIOTA.me IPN'); 
 		$result = curl_exec($ch);
-		
+
 		curl_close($ch);
 
 		return "ERR_OK";
