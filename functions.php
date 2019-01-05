@@ -1,6 +1,11 @@
 <?php 
-require("libs/SwiftMailer/lib/swift_required.php");
-require("libs/PayPal/PaypalIPN.php");
+require_once 'vendor/autoload.php';
+
+use IOTA\Client;
+use IOTA\Node;
+use IOTA\DI\IOTAContainer;
+use IOTA\RemoteApi\RemoteApi;
+use IOTA\ClientApi\ClientApi;
 
 define('ROOT', dirname(__FILE__));
 define('SALT', "");
@@ -20,76 +25,45 @@ define("PAYIOTA_SUBSCRIPTION_PRICE", 12); //USD
 
 ini_set('default_socket_timeout', 7);
 ignore_user_abort(true);
-
+/*
 set_exception_handler(function ($e) {
 	chdir(ROOT);
 	error_log("Unhandled exception occured, error: ".$e." POST: ".print_r($POST, true)." GET: ".print_r($_GET, true), 3, "logs/payiota.log");
 	echo "Sorry, a fatal error has occured, service is unavailable!";
 	die(1);
 });
-
+*/
 class IOTAPaymentGateway {
 
 	public function getWorkingNode() {
-		$nodes = array(
-			"https://nodes.thetangle.org:443",
-			"https://pow6.iota.community/",
-			"https://potato.iotasalad.org:14265",
-			"http://iotanode.party:14265/",
-			"http://node.lukaseder.de:14265",
-			"http://node01.iotatoken.nl:14265",
-			"http://node02.iotatoken.nl:14265",
-			"http://node03.iotatoken.nl:15265",
-			"http://node04.iotatoken.nl:14265",
-			"http://node05.iotatoken.nl:16265",
-			"http://cryptoiota.win:14265",
-			"http://iota.bitfinex.com", //port 80
-			"http://service.iotasupport.com:14265",
-			"http://eugene.iota.community:14265",
-			"http://eugene.iotasupport.com:14999",
-			"http://eugeneoldisoft.iotasupport.com:14265"
-			);
+		$curl = curl_init();
+		
+		curl_setopt_array($curl, array(
+		    CURLOPT_RETURNTRANSFER => 1,
+		    CURLOPT_URL => 'https://iota.dance/api',
+		));
 
-		foreach ($nodes as $key => $value) {
-			if ($this->isNodeOnline($value)) {
-				$working = $value;
-				break;
+		$data = curl_exec($curl);
+		curl_close($curl);
+
+		$data = json_decode($data, true);
+		$working = array();
+
+		foreach ($data as $key => $value) {
+			if ($value["health"] == 10) {
+				$working[$value["load"]] = $value["node"];
 			}
 		}
 
-		if (!isset($working)) {
-			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal, no nodes are working: ".$working);
-		} else {
-			return $working;
+		if (empty($working)) {
+			$this->logEvent("ERR_FATAL_3RD_PARTY", "Not one node is working from API list: ".print_r($data, true));
+			return "ERR_FATAL_3RD_PARTY";
 		}
 
-	}
-
-	function isNodeOnline($url)
-	{
-		//knock knock
-	    $ch = curl_init($url);
-	    curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 1);
-	    curl_setopt($ch,CURLOPT_HEADER, false);
-		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-	    curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
-
-	    //who's there
-	    $response = curl_exec($ch);
-
-	    curl_close($ch);
-
-	    //error
-	    if (!$response) {
-	    	return false;
-	    }
-
-	    if ($response !== '{"error":"Invalid API Version","duration":0}') {
-	    	return false;
-	    }
-
-	    //else OK
-	    return true;
+		ksort($working);
+		
+		$working = reset($working);
+		return $working;
 	}
 
 	public function setupDB() {
@@ -106,6 +80,11 @@ class IOTAPaymentGateway {
 		$sql ='CREATE TABLE pregeneration (id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, realID INTEGER, address TEXT, position INTEGER)';
 		$statement = $db->prepare($sql);
 		$statement->execute();
+
+		$sql = 'CREATE TABLE subscriptions (id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, date TEXT, address TEXT, amount INTEGER, done INTEGER, realID INTEGER, created INTEGER)';
+		$statement = $db->prepare($sql);
+		$statement->execute();
+
 	}
 
 	public function getDB() {
@@ -114,21 +93,60 @@ class IOTAPaymentGateway {
 	}
 	
 	public function getNewAddress($seed, $count) {
-		chdir(ROOT);
-		$output = trim(shell_exec("python scripts/iota_address_generator.py ".$seed." ".$count));
+		$url = $this->getWorkingNode();
 
-		if ($output == "") {
-			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal lightnode failure while generating new address: Empty output");
+		$options = [
+		    'ccurlPath' => '/srv/ccurl'
+		];
+
+		// initializes a new IOTA instance with the built in container and one iota node
+		$container = new IOTAContainer($options);
+
+		$iota = new Client(
+		    $container->get(RemoteApi::class),
+		    $container->get(ClientApi::class),
+		    [new Node($url)]
+		);
+
+		
+		$seed = new \IOTA\Type\Seed($seed);
+		$security =   new IOTA\Type\SecurityLevel(2);
+		
+		$result = $iota->getClientApi()->GetNewAddress(new Node($url), $seed, $count, true, $security);
+		$address = $result->serialize()["address"]["trytes"];
+		$checksum = $result->serialize()["address"]["checkSum"];
+		
+		$address = $address.$checksum;
+
+		if (strlen($address) !== 90) {
+			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal lightnode failure while generating new address: ".$address);
 			return "ERR_FATAL_3RD_PARTY";
-		}
+		} 
 
-		return $output;
+
+		return $address;
+
+
+
 	}
 
 	public function getNewSeed() {
-		chdir(ROOT);
-		$output = trim(shell_exec("python scripts/iota_seed_generator.py"));
-		return $output;
+		//all credits to https://github.com/plabbett/php-iota-seeder, not using library for compactness
+		$seed = '';
+		
+		$allowed_characters = [
+		    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
+		    'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
+		    'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '9',
+		];
+		
+		for ($i = 0; $i < 81; $i++) {
+		    // Cryptographically secure. (7.1 + built in)
+		    // http://php.net/manual/en/function.random-int.php
+		    $seed .= $allowed_characters[random_int(0, count($allowed_characters) - 1)];
+		}
+
+		return $seed;
 	}
 
 	public function provideNewAddress($id, $seed, $count) {
@@ -386,14 +404,14 @@ class IOTAPaymentGateway {
 		try {
 					//sends email to user about signup/payment
 					$title = "PayIOTA_Email";
-				    $transport = Swift_SmtpTransport::newInstance(gethostbyname("mail.gandi.net"), 465, "ssl") 
+				    $transport = (new Swift_SmtpTransport(gethostbyname("mail.gandi.net"), 465, "ssl")) 
 						->setUsername(EMAIL_USERNAME)
 						->setPassword(EMAIL_PASSWORD)
 						->setSourceIp("0.0.0.0");
-					$mailer = Swift_Mailer::newInstance($transport);
+					$mailer = new Swift_Mailer($transport);
 					$logger = new \Swift_Plugins_Loggers_ArrayLogger();
 					$mailer->registerPlugin(new \Swift_Plugins_LoggerPlugin($logger));
-					$message = Swift_Message::newInstance("$title");
+					$message = new Swift_Message("$title");
 					$message 
 						->setSubject($subject)
 						->setFrom(array("bot@lacicloud.net" => "PayIOTA.me"))
@@ -804,10 +822,6 @@ class IOTAPaymentGateway {
 			echo "ERR_IPN_URL_INVALID";
 			die(1);
 		}
-
-		//make sure nodes are online
-		$this->getWorkingNode();
-
 
 		$count = $this->countInvoicesByID($realID);
 		
