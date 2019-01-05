@@ -39,7 +39,7 @@ if (isset($_GET["address"])) {
 
 	echo "<h2>IOTA Payment</h2>";
 	echo "<br>";
-	echo "Please pay ".$price_iota." IOTA's to address ".$address." to complete the checkout!";
+	echo "Please pay ".$price_iota." IOTAs to address ".$address." to complete the checkout!";
 	echo "<br><br>";
 	echo '	<div id="qrcode" ></div><script>new QRCode(document.getElementById("qrcode"), JSON.stringify ( { "address" : "'.$address.'", "amount" : "'.$price_iota.'", "tag" : "" } ) );</script>';
 	echo "<br>";
