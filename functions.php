@@ -940,6 +940,8 @@ class IOTAPaymentGateway {
 			$this->sendIPN($data, $balance);
 			$this->logEvent("ERR_OK", "Sent IPN and updated done to 1 for address ".$address);
 		}
+
+		return ($this->getInvoice($address));
 	}		
 
 	public function countInvoicesByID($id) {

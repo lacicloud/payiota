@@ -86,8 +86,26 @@ if (isset($_POST["api_key"])) {
 		echo $api->returnJSONApi("ERR_OK", $result);
 	}
 
-			
+} elseif (isset($_POST["action"]) and $_POST["action"] == "checkinvoice") {
+
+	if (!isset($_POST["invoice"])) {
+		echo "ERR_PARAMETERS_MISSING";
+		die(1);
+	}
+
+	$data = $api->getInvoice($_POST["invoice"]);
+
+	if (!is_array($data)) {
+		echo "ERR_NOT_FOUND";
+		die(1);
+	} else {
+		$result = $api->checkAddress($data);
+		echo $api->returnJSONApi("ERR_OK", $result);
+	}
+
+
 } else {
+	echo "ERR_METHOD_INCORRECT";
 	die(1);
 }
 
