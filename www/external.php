@@ -68,7 +68,7 @@ function checkPayment() {
 	var xhttp = new XMLHttpRequest();
 	xhttp.open("POST", "api.php", false);
 	xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-	xhttp.send("action=getinvoice&invoice=" + $_GET.address);
+	xhttp.send("action=checkinvoice&invoice=" + $_GET.address);
 
 	if (xhttp.status === 200) {// That's HTTP for 'ok'
 	  var data = xhttp.responseText;

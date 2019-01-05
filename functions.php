@@ -60,6 +60,7 @@ class IOTAPaymentGateway {
 			return "ERR_FATAL_3RD_PARTY";
 		}
 
+		//sort by load
 		ksort($working);
 		
 		$working = reset($working);
