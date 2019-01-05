@@ -641,7 +641,7 @@ class IOTAPaymentGateway {
 					}
 			}
 
-			$url = 'https://free.currencyconverterapi.com/api/v5/convert?q='.$from.'_'.$to.'&compact=y';
+			$url = 'https://api.exchangeratesapi.io/latest?symbols='.strtoupper($to).'&base='.strtoupper($from);
 
 			$curl = curl_init();
 			curl_setopt_array($curl, array(
@@ -651,14 +651,14 @@ class IOTAPaymentGateway {
 			$data = curl_exec($curl);
 			curl_close($curl);
 			
-			if (!$data or $data == '{"status":403,"error":"The system has automatically blocked you for exceeding the limit."}') {
+			if (!$data) {
 				$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal currency API error ".$data);
 				return "ERR_FATAL_3RD_PARTY";
 			}
 			
 			
 			$data = json_decode($data, true);
-			$rate = $data[$from."_".$to]["val"];
+			$rate = $data["rates"]["USD"];
 			
 			$converted = $amount * $rate;
 			return round($converted, 3);
