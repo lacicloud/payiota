@@ -91,7 +91,7 @@ function checkPayment() {
 	  var created = obj["content"][0]["created"];
 
 	  if (status == 1)  {
-	  	document.getElementById("payment_waiting_message").innerHTML = "<strong>Payment accepted! You are about to be redirect to " + success_url + "!</strong>";
+	  	document.getElementById("payment_waiting_message").innerHTML = "<strong>Payment accepted! You are about to be redirected to " + success_url + "!</strong>";
 	  	clearInterval(interval);
 	  	setTimeout(function () {redirectTo(success_url);}, 3000);
 	  //if expired then go to cancel url
@@ -102,7 +102,7 @@ function checkPayment() {
 
 		//1 week currently
 		if (difference > 630427) {
-			document.getElementById("payment_waiting_message").innerHTML = "<strong>Payment canceled due to time limit! You are about to be redirect to " + cancel_url + "!</strong>";
+			document.getElementById("payment_waiting_message").innerHTML = "<strong>Payment canceled due to time limit! You are about to be redirected to " + cancel_url + "!</strong>";
 			clearInterval(interval);
 			setTimeout(function () {redirectTo(cancel_url);}, 3000);
 		}
