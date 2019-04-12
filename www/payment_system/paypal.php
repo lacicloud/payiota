@@ -19,6 +19,12 @@ if ($verified) {
     $id = $custom[0];
     $address = $custom[1];
     $year = $custom[2];
+    $verification = $custom[3];
+
+    if ($verification !== PAYIOTA_VERIFICATION_KEY) {
+        echo "Verification error.";
+        die(1);
+    }
 
     $mc_gross = $_POST["mc_gross"];
     $mc_currency = $_POST["mc_currency"];

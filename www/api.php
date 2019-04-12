@@ -17,46 +17,28 @@ if (isset($_POST["api_key"])) {
 		echo "ERR_API_KEY_INVALID";
 		die(1);
 	} else {
-		if (isset($_POST["action"]) and $_POST["action"] == "new") {
-			$price = $_POST["price"];
+		if (isset($_POST["action"]) and $_POST["action"] == "new") {	
 
-			if (!is_numeric($price)) {
-				echo "ERR_PRICE_INVALID";
-				die(1);
-			}
+		//fix for old clients still running until email is sent out
+		if (!isset($_POST["expiration"])) {
+			$_POST["expiration"] = 630427;
+		}	
 
-			$custom = $_POST["custom"];
-
-			if (empty($custom)) {
-				echo "ERR_CUSTOM_INVALID";
-				die(1);
-			}
-
-			if (isset($_POST["currency"]) and $_POST["currency"] !== "USD") {
-					$price = $api->convertCurrency($price, $_POST["currency"], "USD");
-			}
-
-			if (!is_numeric($price) or $price == 0 or $price == "ERR_FATAL_3RD_PARTY") {
-				echo "ERR_FATAL_3RD_PARTY";
-				die(1);
-			}
-
-			if (isset($_POST["ipn_url"])) {
-				$ipn_url = $_POST["ipn_url"];
-			}
-			
-			echo ($api->addPaymentToServer($id, $price, $custom, $ipn_url));
+			echo ($api->addPaymentToServer($id, $_POST["price"], $_POST["currency"], $_POST["expiration"], $_POST["custom"], $_POST["ipn_url"]));
+			die(0);
 		} elseif (@$_POST["action"] == "update") {
 
-			$address = $_POST["address"];
+			$address = $_POST["invoice"];
 			$verification = $_POST["verification"];
+			$expiration = $_POST["expiration"];
 
-			if (empty($address) or empty($verification)) {
+			if (empty($address) or empty($verification) or empty($expiration)) {
 				echo "ERR_INPUT_INVALID";
 				die(1);
 			}
 
-			echo ($api->updatePriceForAddress($address, $verification, $id));
+			echo ($api->updateAddress($address, $expiration, $verification, $id));
+			die(0);
 
 		} else {
 			echo "ERR_PARAMETERS_MISSING";
@@ -64,8 +46,6 @@ if (isset($_POST["api_key"])) {
 		}
 
 	}
-} elseif (isset($_GET["action"]) and $_GET["action"] == "convert_to_usd" and isset($_GET["iota"])) {
-	echo $api->getUSDPrice($_GET["iota"]);
 } elseif (isset($_GET["action"]) and $_GET["action"] == "getnumberofusers") {
 	echo $api->getNumberOfUsers();
 } elseif (isset($_GET["action"]) and $_GET["action"] == "getpaymentstatistics") {
@@ -84,6 +64,7 @@ if (isset($_POST["api_key"])) {
 		die(1);
 	} else {
 		echo $api->returnJSONApi("ERR_OK", $result);
+		die(0);
 	}
 
 } elseif (isset($_POST["action"]) and $_POST["action"] == "checkinvoice") {
@@ -100,7 +81,13 @@ if (isset($_POST["api_key"])) {
 		die(1);
 	} else {
 		$result = $api->checkAddress($data);
-		echo $api->returnJSONApi("ERR_OK", $result);
+		if (is_array($result)) {
+			echo $api->returnJSONApi("ERR_OK", $result);
+		} else {
+			echo $api->returnJSONApi("ERR_INVOICE_EXPIRED", $result);
+		}
+		
+		die(0);
 	}
 
 

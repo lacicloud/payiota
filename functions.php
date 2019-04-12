@@ -13,18 +13,22 @@ define("EMAIL_USERNAME", "");
 define("EMAIL_PASSWORD", "");
 define("MYSQL_USERNAME", "");
 define("MYSQL_PASSWORD", "");
-define("PAYIOTA_IPN_URL", "https://payiota.me/payment_system/payiota.php");
+define("PAYIOTA_IPN_URL", "");
 define("PAYIOTA_API_KEY", "");
 define("PAYIOTA_VERIFICATION_KEY", "");
 define("PAYPAL_API_USER", "");
 define("PAYPAL_API_PASSWORD", "");
 define("PAYPAL_API_SIGNATURE", "");
+define("COINLIB_API_KEY", "");
 define("PAYIOTA_ID", 574);
 define("LACICLOUD_ID", 6);
 define("PAYIOTA_SUBSCRIPTION_PRICE", 12); //USD
+define("MAX_EXPIRATION", 630427);
+define("MIN_EXPIRATION", 60);
 
 ini_set('default_socket_timeout', 7);
 ignore_user_abort(true);
+
 
 set_exception_handler(function ($e) {
 	chdir(ROOT);
@@ -33,48 +37,224 @@ set_exception_handler(function ($e) {
 	die(1);
 });
 
+
+
 class IOTAPaymentGateway {
 
 	public function getWorkingNode() {
-		$curl = curl_init();
-		
-		curl_setopt_array($curl, array(
-		    CURLOPT_RETURNTRANSFER => 1,
-		    CURLOPT_URL => 'https://iota.dance/api',
-		));
+			$uri = $this->getWorkingNodeMain();
 
-		$data = curl_exec($curl);
-		curl_close($curl);
+			if ($uri == "ERR_FATAL_3RD_PARTY") {
+				$uri = $this->getWorkingNodeFallbackOne();
+				if ($uri == "ERR_FATAL_3RD_PARTY") {
+					$uri = $this->getWorkingNodeFallbackTwo();
+					if ($uri == "ERR_FATAL_3RD_PARTY") {
+						$uri = $this->getWorkingNodeFallbackThree();
+						if ($uri == "ERR_FATAL_3RD_PARTY") {
+							$this->logEvent("ERR_FATAL_3RD_PARTY", "No nodes working, all fallbacks tried!");
+							return "ERR_FATAL_3RD_PARTY";
+						}
+					}
+				}
+			}
 
-		$data = json_decode($data, true);
-		$working = array();
+			return $uri;
+		}
 
-		foreach ($data as $key => $value) {
-			if ($value["health"] == 10) {
-				$working[$value["load"]] = $value["node"];
+		//we do not actually need to validate the URL, as it comes from already processed services. We just need to check whether the services were offline or not (json_decode returns a NULL array if the data was not JSON-encoded)
+		public function validateURI($uri) {
+			if (empty($uri) or !isset($uri) or $uri == false or is_null($uri)) {
+				return false;
+			} else {
+				return true;
 			}
 		}
 
-		if (empty($working)) {
-			$this->logEvent("ERR_FATAL_3RD_PARTY", "Not one node is working from API list: ".print_r($data, true));
-			return "ERR_FATAL_3RD_PARTY";
+
+		public function decodeJSON($data) {
+			return json_decode($data, true);
 		}
 
-		//sort by load
-		ksort($working);
+		public function curlGET($url) {
+			$curl = curl_init();
+			
+			curl_setopt_array($curl, array(
+			    CURLOPT_RETURNTRANSFER => 1,
+			    CURLOPT_URL => $url,
+			));
+
+			$data = curl_exec($curl);
+			curl_close($curl);
+
+			return $data;
+		}
+
+		//sort by health and load
+		public function sortBestNodes($data) {
+			$data = $this->arrayOrderBy($data, "health", SORT_DESC, "load", SORT_ASC);
+			return $data;
+
+		}
+
+		public function arrayOrderBy() {
+			$args = func_get_args();
+			$data = array_shift($args);
+			foreach ($args as $n => $field) {
+			    if (is_string($field)) {
+			        $tmp = array();
+			        foreach ($data as $key => $row)
+			            @$tmp[$key] = $row[$field];
+			        $args[$n] = $tmp;
+			        }
+			}
+			$args[] = &$data;
+			call_user_func_array('array_multisort', $args);
+			return array_pop($args);
+		}
+
+		//iota.dance/api
+		public function getWorkingNodeMain() {
+			$data = $this->curlGET("https://iota.dance/api");
+
+			if (!$data) {
+				$this->logEvent("ERR_FATAL_3RD_PARTY", "Main node is not working, network exception: ".$data);
+				return "ERR_FATAL_3RD_PARTY";
+			}
+
+			$data = $this->decodeJSON($data);
+			$data = $this->sortBestNodes($data);
+			$uri = $data[0]["node"];
+
+			if (!$this->validateURI($uri)) {
+				$this->logEvent("ERR_FATAL_3RD_PARTY", "Main node is not working, data exception: ".$uri);
+				return "ERR_FATAL_3RD_PARTY";
+			}
+
+
+			return $uri;
+		}
+
 		
-		$working = reset($working);
-		return $working;
-	}
+		//https://nodes.iota.works/api/live/ssl
+		public function getWorkingNodeFallbackOne() {
+			$data = $this->curlGET("https://nodes.iota.works/api/live/ssl");
+
+			if (!$data) {
+				$this->logEvent("ERR_FATAL_3RD_PARTY", "Fallback one node is not working, network exception: ".$data);
+				return "ERR_FATAL_3RD_PARTY";
+			}
+
+
+			$data = $this->decodeJSON($data);
+			$data = $this->sortBestNodes($data);
+			$uri = $data[0]["node"];
+
+			if (!$this->validateURI($uri)) {
+				$this->logEvent("ERR_FATAL_3RD_PARTY", "Fallback one node is not working, data exception: ".$uri);
+				return "ERR_FATAL_3RD_PARTY";
+			}
+
+			return $uri;
+		}
+
+
+		//https://api.iota-nodes.net/
+		public function getWorkingNodeFallbackTwo() {
+			$data = $this->curlGET("https://api.iota-nodes.net/");
+
+			if (!$data) {
+				$this->logEvent("ERR_FATAL_3RD_PARTY", "Fallback two node is not working, network exception: ".$data);
+				return "ERR_FATAL_3RD_PARTY";
+			}
+
+			$data = $this->decodeJSON($data);
+			$data = $this->sortBestNodes($data);
+			$uri = $data[0]["hostname"].":".$data[0]["port"];
+
+			if (!$this->validateURI($uri)) {
+				$this->logEvent("ERR_FATAL_3RD_PARTY", "Fallback two node is not working, data exception: ".$uri);
+				return "ERR_FATAL_3RD_PARTY";
+			}
+
+			return $uri;
+		}
+
+		//attempt to get a few hardcoded nodes
+		public function getWorkingNodeFallbackThree() {
+			$nodes = array(
+				"https://pool.iota.dance:443",
+				"https://potato.iotasalad.org:14265",
+				"https://durian.iotasalad.org:14265",
+				"https://peanut.iotasalad.org:14265",
+				"https://tuna.iotasalad.org:14265",
+				"https://turnip.iotasalad.org:14265",
+				"http://iotanode.party:14265/",
+				"http://node.lukaseder.de:14265",
+				"http://node01.iotatoken.nl:14265",
+				"http://node02.iotatoken.nl:14265",
+				"http://node03.iotatoken.nl:15265",
+				"http://node04.iotatoken.nl:14265",
+				"http://node05.iotatoken.nl:16265",
+				"http://cryptoiota.win:14265",
+				"http://iota.bitfinex.com", //port 80
+				"http://service.iotasupport.com:14265",
+				"http://eugene.iota.community:14265",
+				"http://eugene.iotasupport.com:14999",
+				"http://eugeneoldisoft.iotasupport.com:14265"
+				);
+
+			foreach ($nodes as $key => $value) {
+					if ($this->isNodeOnline($value)) {
+						$working = $value;
+						break;
+					}
+				}
+
+				if (!isset($working)) {
+					$this->logEvent("ERR_FATAL_3RD_PARTY", "Fallback three node is not working, all hardcoded nodes tried!");
+					return "ERR_FATAL_3RD_PARTY";
+				} else {
+					return $working;
+				}
+
+		}
+
+		public function isNodeOnline($uri) {
+
+				$ch = curl_init();
+				curl_setopt($ch, CURLOPT_URL, $uri);
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+				curl_setopt($ch, CURLOPT_POSTFIELDS, "{\"command\": \"getBalances\", \"addresses\": [\"invalid\"], \"threshold\": 100}");
+				curl_setopt($ch, CURLOPT_POST, 1);
+				$headers = array();
+				$headers[] = "Content-Type: application/json";
+				$headers[] = "X-IOTA-API-Version: 1";
+				curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+				$data = curl_exec($ch);
+				curl_close($ch);
+
+			    //error
+			    if (!$data) {
+			    	return false;
+			    }
+
+			    if ($data !== '{"error":"Invalid addresses input","duration":0}') {
+			    	return false;
+			    }
+
+			    //else OK
+			    return true;
+		}
 
 	public function setupDB() {
 		$db =  $this->getDB();
 
-		$sql = "CREATE TABLE users (id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, seed TEXT, email TEXT, password TEXT, api_key TEXT, ipn_url TEXT, verification TEXT, confirmed TEXT, count INTEGER)";
+		$sql = "CREATE TABLE users (id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, seed TEXT, email TEXT, password TEXT, api_key TEXT, verification TEXT, confirmed TEXT, count INTEGER)";
 		$statement = $db->prepare($sql);
 		$statement->execute();
 
-		$sql ='CREATE TABLE payments (id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, address TEXT, realID INTEGER, price INTEGER, price_iota INTEGER, custom TEXT, ipn_url TEXT, verification TEXT, done INTEGER, created INTEGER)';
+		$sql ='CREATE TABLE payments (id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, address TEXT, realID INTEGER, price INTEGER, price_iota INTEGER, currency TEXT, expiration INTEGER, custom TEXT, ipn_url TEXT, verification TEXT, done INTEGER, created INTEGER)';
 		$statement = $db->prepare($sql);
 		$statement->execute();
 
@@ -94,7 +274,7 @@ class IOTAPaymentGateway {
 	}
 	
 	public function getNewAddress($seed, $count) {
-		$url = $this->getWorkingNode();
+		$uri = $this->getWorkingNode();
 
 		$options = [
 		    'ccurlPath' => '/srv/ccurl'
@@ -106,21 +286,21 @@ class IOTAPaymentGateway {
 		$iota = new Client(
 		    $container->get(RemoteApi::class),
 		    $container->get(ClientApi::class),
-		    [new Node($url)]
+		    [new Node($uri)]
 		);
 
 		
 		$seed = new \IOTA\Type\Seed($seed);
 		$security =   new IOTA\Type\SecurityLevel(2);
 		
-		$result = $iota->getClientApi()->GetNewAddress(new Node($url), $seed, $count, true, $security);
+		$result = $iota->getClientApi()->GetNewAddress(new Node($uri), $seed, $count, true, $security);
 		$address = $result->serialize()["address"]["trytes"];
 		$checksum = $result->serialize()["address"]["checkSum"];
 		
 		$address = $address.$checksum;
 
 		if (strlen($address) !== 90) {
-			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal lightnode failure while generating new address: ".$address);
+			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal lightnode failure of ".$uri." while generating new address: ".$address);
 			return "ERR_FATAL_3RD_PARTY";
 		} 
 
@@ -253,14 +433,14 @@ class IOTAPaymentGateway {
 	}
 
 	public function getAddressBalance($address) {
-		$url = $this->getWorkingNode();
+		$uri = $this->getWorkingNode();
 
 		//cut out checksum from address
 		$address = substr($address, 0, -9);
 
 		$ch = curl_init();
 
-		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_URL, $uri);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, "{\"command\": \"getBalances\", \"addresses\": [\"".$address."\"], \"threshold\": 100}");
 		curl_setopt($ch, CURLOPT_POST, 1);
@@ -329,14 +509,14 @@ class IOTAPaymentGateway {
 	}
 
 	public function getAddressStatus($address) {
-		$url = $this->getWorkingNode();
+		$uri = $this->getWorkingNode();
 
 		//cut out checksum from address
 		$address = substr($address, 0, -9);
 
 		$ch = curl_init();
 
-		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_URL, $uri);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, "{\"command\": \"findTransactions\", \"addresses\": [\"".$address."\"]}");
 		curl_setopt($ch, CURLOPT_POST, 1);
@@ -370,6 +550,7 @@ class IOTAPaymentGateway {
 		return bin2hex(openssl_random_pseudo_bytes(32));
 	}
 
+	//128 chars as bin2hex makes it twice as big
 	public function getNewVerificationString() {
 		return bin2hex(openssl_random_pseudo_bytes(64));
 	}
@@ -391,12 +572,12 @@ class IOTAPaymentGateway {
 	}
 
 	public function matchCodeToMessage($code) {
-		$array = array("ERR_EXISTS" => "Sorry, email already exists in database!", "ERR_LOGIN_INCORRECT" => "Sorry, email or password incorrect!", "ERR_INVALID_INFO" => "Sorry, email or password could not be validated!", "ERR_URL_NOT_VALID" => "Sorry, the URL you entered is invalid!", "ERR_CAPTCHA" => "Sorry, captcha entered is incorrect!","ERR_KEY_WRONG" => "Sorry, confirm key is incorrect!","ERR_IPN_OK" => "Successfully updated IPN url!", "ERR_CONFIRM_OK" => "Successfully confirmed account!", "ERR_REGISTER_OK" => "Successfully created account! Please confirm it via your email address!", "ERR_UNCONFIRMED" => "Account not confirmed! Please confirm it first!", "ERR_OK" => "Action Successfully completed!");
+		$array = array("ERR_EXISTS" => "Sorry, email already exists in database!", "ERR_LOGIN_INCORRECT" => "Sorry, email or password incorrect!", "ERR_INVALID_INFO" => "Sorry, email or password could not be validated!", "ERR_URL_NOT_VALID" => "Sorry, the URL you entered is invalid!", "ERR_CAPTCHA" => "Sorry, captcha entered is incorrect!","ERR_KEY_WRONG" => "Sorry, confirm key is incorrect!", "ERR_CONFIRM_OK" => "Successfully confirmed account!", "ERR_REGISTER_OK" => "Successfully created account! Please confirm it via your email address!", "ERR_UNCONFIRMED" => "Account not confirmed! Please confirm it first!", "ERR_INVOICE_EXPIRED" => "Error, invoice is expired!",  "ERR_RESET_STEP_1_OK" => "Email sent, please check your email account!", "ERR_RESET_STEP_2_OK" => "Account\"s password reset!", "ERR_TOS_UNCHECKED" => "Please check the TOS box before proceeding!", "ERR_OK" => "Action Successfully completed!");
 		return $array[$code];
 	}
 
 	public function matchCodeToType($code) {
-		$array = array("ERR_EXISTS" => "error", "ERR_LOGIN_INCORRECT" => "error", "ERR_INVALID_INFO" => "error", "ERR_CAPTCHA" => "error", "ERR_URL_NOT_VALID" => "error", "ERR_KEY_WRONG" => "error","ERR_IPN_OK" => "success", "ERR_CONFIRM_OK" => "success", "ERR_REGISTER_OK" => "success", "ERR_UNCONFIRMED" => "warning", "ERR_OK" => "success");
+		$array = array("ERR_EXISTS" => "error", "ERR_LOGIN_INCORRECT" => "error", "ERR_INVALID_INFO" => "error", "ERR_CAPTCHA" => "error", "ERR_URL_NOT_VALID" => "error", "ERR_KEY_WRONG" => "error", "ERR_CONFIRM_OK" => "success", "ERR_INVOICE_EXPIRED" => "error", "ERR_TOS_UNCHECKED" => "error", "ERR_REGISTER_OK" => "success", "ERR_UNCONFIRMED" => "warning", "ERR_RESET_STEP_1_OK" => "success", "ERR_RESET_STEP_2_OK" => "success", "ERR_OK" => "success");
 		return $array[$code];
 	}
 
@@ -405,7 +586,7 @@ class IOTAPaymentGateway {
 		try {
 					//sends email to user about signup/payment
 					$title = "PayIOTA_Email";
-				    $transport = (new Swift_SmtpTransport(gethostbyname("mail.gandi.net"), 465, "ssl")) 
+				    $transport = (new Swift_SmtpTransport("mail.gandi.net", 465, "ssl")) 
 						->setUsername(EMAIL_USERNAME)
 						->setPassword(EMAIL_PASSWORD)
 						->setSourceIp("0.0.0.0");
@@ -427,20 +608,23 @@ class IOTAPaymentGateway {
 		} catch(\Swift_TransportException $e){
 			        $response = $e->getMessage();
 			        $result = "ERR_EMAIL_ERROR";
+			        $this->logEvent("ERR_EMAIL_ERROR", "Error while sending email to ".$to." with subject ".$subject." and body ".$body." : ".$response);
 		} catch (Exception $e) {
 			    	$response = $e->getMessage();
 			    	$result = "ERR_EMAIL_ERROR";
+			    	$this->logEvent("ERR_EMAIL_ERROR", "Exception while sending email to ".$to." with subject ".$subject." and body ".$body." : ".$response);
 		}
 
 		return $result;
 
 	}
 
+
 	public function loginUser($email, $password) {
 		$email =  trim($email);
 
 		//verify data
-		if ($this->validateInfo($email, $password) !== "ERR_OK") {
+		if ($this->validateInfo($email, $password, $password) !== "ERR_OK") {
 			return "ERR_INVALID_INFO";
 		}
 
@@ -474,10 +658,14 @@ class IOTAPaymentGateway {
 	}
 
 
-	public function validateInfo($email, $password) {
+	public function validateInfo($email, $password, $password_retyped) {
 
 		if (empty($email) or empty($password)) {
 			return "ERR_EMPTY_VALUES";
+		}
+
+		if ($password !== $password_retyped) {
+			return "ERR_PASSWORDS_DO_NOT_MATCH";
 		}
 
 		if (strlen($password) < 8 or !preg_match("#[0-9]+#", $password) or !preg_match("#[a-zA-Z]+#", $password)) {
@@ -492,13 +680,13 @@ class IOTAPaymentGateway {
 
 	}
 
-	public function createAccount($email, $password) {
+	public function createAccount($email, $password, $password_retyped) {
 		$api_payments = new Payments;
 
 		$email =  trim($email);
 		
 		//verify data
-		if ($this->validateInfo($email, $password) !== "ERR_OK") {
+		if ($this->validateInfo($email, $password, $password_retyped) !== "ERR_OK") {
 			return "ERR_INVALID_INFO";
 		}
 
@@ -506,6 +694,13 @@ class IOTAPaymentGateway {
 		if ($this->checkIfAlreadyExists($email) !== "ERR_OK") {
 			return "ERR_EXISTS";
 		}
+
+		//check terms & conditions checkbox
+
+		if (@count($_POST["checkbox"]) == 0) {
+			return "ERR_TOS_UNCHECKED";
+		}
+
 
 		$password = $this->hashPassword($password);
 		$api_key = $this->generateAPIKey();
@@ -516,21 +711,21 @@ class IOTAPaymentGateway {
 		$this->sendEmail($email, "PayIOTA.me - Confirm Account",  "<html><body><p>Hi there!</p><p>To confirm your account, please click <a href='https://payiota.me/confirm.php?key=".$verification_email."'>here</a>.</p><p>Best Regards,<br>PayIOTA.me</p></body></html>");
 
 		//empty by default
-		$ipn_url = '';
 		$addresses = '';
+		$reset_key = '1';
 		$count = 0;
 
 		$db = $this->getDB();
-		$sql = "INSERT INTO users (seed, email, password, api_key, ipn_url, verification, confirmed, count) VALUES (:seed, :email, :password, :api_key, :ipn_url, :verification, :confirmed, :count)";
+		$sql = "INSERT INTO users (seed, email, password, api_key, verification, confirmed, count, reset_key) VALUES (:seed, :email, :password, :api_key, :verification, :confirmed, :count, :reset_key)";
 		$stmt = $db->prepare($sql);
 		$stmt->bindParam(':seed', $seed);
 		$stmt->bindParam(':email', $email);
 		$stmt->bindParam(':password', $password);
 		$stmt->bindParam(':api_key', $api_key);
-		$stmt->bindParam(':ipn_url', $ipn_url);
 		$stmt->bindParam(':verification', $verification);
 		$stmt->bindParam(':confirmed', $verification_email);
 		$stmt->bindParam(':count', $count);
+		$stmt->bindParam(':reset_key', $reset_key);
 		$stmt->execute();
 
 		$api_payments->generateInvoiceForUser($this->matchEmailtoID($email));
@@ -573,7 +768,7 @@ class IOTAPaymentGateway {
 		return "ERR_CONFIRM_OK";
 	}
 }
-
+	//128 chars as bin2hex makes it twice as big
 	public function getNewVerificationEmailString() {
 		return bin2hex(openssl_random_pseudo_bytes(64));
 	}
@@ -590,7 +785,7 @@ class IOTAPaymentGateway {
 	}
 
 	public function getPaymentAccountValues($id) {
-		$db = $this->getDB();
+			$db = $this->getDB();
 			$sql = "SELECT * FROM payments WHERE realID = :id";
 			$stmt = $db->prepare($sql);
 			$stmt->bindParam(":id", $id);
@@ -629,90 +824,32 @@ class IOTAPaymentGateway {
 		return $id;
 	}
 
-	public function convertCurrency($amount, $from, $to) {
-			
-			if ($from == "IOTA") {
-					$price = $this->getUSDPrice($amount);
-					if ($price == "ERR_FATAL_3RD_PARTY") {
-						$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal currency API error for getting USD price from IOTA ".$price);
-						return "ERR_FATAL_3RD_PARTY";
-					} else {
-						return $price;
-					}
-			}
+	public $valid_currencies = ["USD", "EUR", "IOTA", "MIOTA", "CAD", "AUD", "CHF", "CNY", "DKK", "HUF", "GBP", "HKD", "ILS", "INR", "ISK", "NZD", "KRW", "SGD", "ZAR", "PHP"];
 
-			$url = 'https://api.exchangeratesapi.io/latest?symbols='.strtoupper($to).'&base='.strtoupper($from);
-
-			$curl = curl_init();
-			curl_setopt_array($curl, array(
-				CURLOPT_RETURNTRANSFER => 1,
-				CURLOPT_URL => $url
-			));
-			$data = curl_exec($curl);
-			curl_close($curl);
-			
-			if (!$data) {
-				$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal currency API error ".$data);
-				return "ERR_FATAL_3RD_PARTY";
-			}
-			
-			
-			$data = json_decode($data, true);
-			$rate = $data["rates"]["USD"];
-			
-			$converted = $amount * $rate;
-			return round($converted, 3);
-	}
-
-	public function getUSDPrice($iota) {
-
-		$convert_miota = $iota / 1000000;
-	
-		$data = $this->getCMP();
-
-		if ($data == "ERR_FATAL_3RD_PARTY") {
-			return "ERR_FATAL_3RD_PARTY";
+	public function validateCurrency($currency) {
+		if (!in_array($currency, $this->valid_currencies)) {
+		    return false;
+		} else {
+			return true;
 		}
 
-		$data = json_decode($data, true);
-		$price_usd = (double)$data[0]["price_usd"];
-		$price_in_usd = $price_usd * $convert_miota;
-
-		return $price_in_usd;
-
 	}
-	
-	public function getCMP() {
-		$curl = curl_init();
-		curl_setopt_array($curl, array(
-		    CURLOPT_RETURNTRANSFER => 1,
-		    CURLOPT_URL => 'https://api.coinmarketcap.com/v1/ticker/iota/',
-		));
-		$data = curl_exec($curl);
-		
-		if (!$data) {
-			$this->logEvent("ERR_FATAL_3RD_PARTY", "Fatal CMP error: ".curl_error($curl));
-			return "ERR_FATAL_3RD_PARTY";
+
+	public function convertCurrencyToIOTA($price, $currency) {
+		//first test to see if currency is on the list of approved currencies (compatible with all three fallbacks)
+		if (!$this->validateCurrency($currency)) {
+			return "ERR_CURRENCY_INVALID";
 		}
-		
-		curl_close($curl);
-		
-		return $data;
-	}
 
-	public function getIOTAPrice($price) {
 		//to get it in number of million IOTAS, divide price by miota price, then round MIOTA
 		//to get it in IOTA, multiply MIOTA by million
-		$data = $this->getCMP();
+		$rate = $this->getIOTATicker($currency);
 
-		if ($data == "ERR_FATAL_3RD_PARTY") {
+		if ($rate == "ERR_FATAL_3RD_PARTY" or !is_numeric($rate)) {
 			return "ERR_FATAL_3RD_PARTY";
 		}
 
-		$data = json_decode($data, true);
-
-		$price_usd = (double)$data[0]["price_usd"];
-		$miota = (double)$price / (double)$price_usd;
+		$miota = (double)$price / (double)$rate;
 		$iota = $miota * 1000000;
 		$iota = (int)round($iota);
 
@@ -723,8 +860,238 @@ class IOTAPaymentGateway {
 		return $iota; 
 	}
 
+	public function getIOTATicker($currency) {
+
+		//special case
+		if ($currency == "IOTA") {
+			return 1000000;
+		} elseif ($currency == "MIOTA") {
+			return 1;
+		}
+
+		$rate = $this->getIOTATickerMain($currency);
+
+		if ($rate == "ERR_FATAL_3RD_PARTY") {
+			$rate = $this->getIOTATickerFallbackOne($currency);
+			if ($rate == "ERR_FATAL_3RD_PARTY") {
+				$rate = $this->getIOTATickerFallbackTwo($currency);
+				if ($rate == "ERR_FATAL_3RD_PARTY") {
+					$this->logEvent("ERR_FATAL_3RD_PARTY", "Error, all IOTA ticker fallbacks failed.");
+					return "ERR_FATAL_3RD_PARTY";
+				}
+			}
+		}
+
+		return $rate;
+
+	}	
+
+	public function getIOTATickerFallbackTwo($currency) {
+		$data = $this->curlGET("https://api.coincap.io/v2/rates");
+		if (!$data) {
+			return "ERR_FATAL_3RD_PARTY";
+		}
+		$data = $this->decodeJSON($data);
+
+		//get and store exchange rate of currency to to USD
+		foreach ($data as $key => $value) {
+		    if (is_array($value)) {
+		        foreach ($value as $key_1 => $value_1) {
+		        if ($value_1["symbol"] == $currency) {
+		           $rate_conversion = $value_1["rateUsd"];
+		           break;
+		        }
+		    }
+		    }   
+		}
+
+		if (!is_numeric($rate_conversion)) {
+			return "ERR_FATAL_3RD_PARTY";
+		}
+
+		$data = $this->curlGET("https://api.coincap.io/v2/assets");
+		if (!$data) {
+			return "ERR_FATAL_3RD_PARTY";
+		}
+		$data = $this->decodeJSON($data);
+		
+		foreach ($data as $key => $value) {
+		    if (is_array($value)) {
+		        foreach ($value as $key_1 => $value_1) {
+		        if ($value_1["symbol"] == "MIOTA") {
+		            $rate = $value_1["priceUsd"];
+		            break;
+		        }
+		    }
+		    }
+		}
+
+		if (!is_numeric($rate)) {
+			return "ERR_FATAL_3RD_PARTY";
+		}
+
+		$rate = (double)$rate / (double)$rate_conversion;
+
+		return (float)$rate;
+
+
+	}
+
+	//CoinGecko API
+	public function getIOTATickerFallbackOne($currency) {
+		$data = $this->curlGET("https://api.coingecko.com/api/v3/simple/price?ids=iota&vs_currencies=".$currency);
+		
+		if (!$data) {
+			return "ERR_FATAL_3RD_PARTY";
+		}
+
+		$data = $this->decodeJSON($data);
+
+		$rate = $data["iota"][strtolower($currency)];
+		
+		if (!is_numeric($rate)) {
+			return "ERR_FATAL_3RD_PARTY";
+		}
+
+		return (float)$rate;
+	}
+
+	//Coinlib.io API with permission to use
+	public function getIOTATickerMain($currency) {
+		$data = $this->curlGET("https://coinlib.io/api/v1/coin?key=".COINLIB_API_KEY."&pref=".$currency."&symbol=IOT");
+		
+
+		if (!$data) {
+			return "ERR_FATAL_3RD_PARTY";
+		}
+
+		$data = $this->decodeJSON($data);
+		$rate = $data["price"];
+		
+		if (!is_numeric($rate)) {
+			return "ERR_FATAL_3RD_PARTY";
+		}
+
+		return (float)$rate;
+	}
+
+	public function forgotLoginStep1($email) {
+		$id = $this->matchEmailtoID($email);
+
+		if (!isset($id)) {
+			return "ERR_EMAIL_INVALID";
+		}
+
+		$reset_key = $this->getNewResetVerificationString();
+
+		$db = $this->getDB();	
+		$sql = "UPDATE users SET reset_key = :reset_key WHERE id = :id";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(":reset_key", $reset_key);
+		$stmt->bindParam(":id", $id);
+		$stmt->execute();
+
+		$this->sendEmail($email, "PayIOTA.me - Reset Account",  "<html><body><p>Hi there!</p><p>To reset your account, please click <a href='https://payiota.me/account.php?forgot_2&reset_key=".$reset_key."'>here</a> or go to <a href='https://payiota.me/account.php?forgot_2'>https://payiota.me/account.php?forgot_2</a> and enter your reset key: ".$reset_key.".</p><p>Best Regards,<br>PayIOTA.me</p></body></html>");
+
+		return "ERR_RESET_STEP_1_OK";
+
+	}
+
+	public function matchResetKeyToEmail($reset_key) {
+		$db = $this->getDB();
+		$sql = "SELECT email FROM users WHERE reset_key = :reset_key";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(":reset_key", $reset_key);
+		$stmt->execute();
+
+		$email = key(array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
+		
+		return $email;
+	}
+
+	//64 chars
+	public function getNewResetVerificationString() {	
+		return bin2hex(openssl_random_pseudo_bytes(32));
+	}
+
+	public function forgotLoginStep2($reset_key, $password, $password_retyped) {
+		$email = $this->matchResetKeyToEmail($reset_key);
+
+		if (!isset($email) or is_null($email) or $reset_key == '1' or $reset_key == 1) {
+			return "ERR_RESET_KEY_INVALID";
+		}
+
+		//verify data
+		if ($this->validateInfo($email, $password, $password_retyped) !== "ERR_OK") {
+			return "ERR_INVALID_INFO";
+		}
+
+		$password = $this->hashPassword($password);
+
+		$db = $this->getDB();	
+		$sql = "UPDATE users SET password = :password WHERE email = :email";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(":password", $password);
+		$stmt->bindParam(":email", $email);
+		$stmt->execute();
+
+		$db = $this->getDB();	
+		$sql = "UPDATE users SET reset_key = '1' WHERE email = :email";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(":email", $email);
+		$stmt->execute();
+
+		$this->sendEmail($email, "PayIOTA.me - Account Reset",  "<html><body><p>Hi there!</p><p>Your account's password was reset. The IP of the person who reset your account (this is not stored or recordedin any way): ".$_SERVER["REMOTE_ADDR"]."; if this was not you, please contact support at support@payiota.me as soon as possible!</p><p>Best Regards,<br>PayIOTA.me</p></body></html>");
+
+		return "ERR_RESET_STEP_2_OK";
+
+
+	}
+
+	public function deleteAccount($id) {
+		$db = $this->getDB();	
+
+		$sql = "DELETE FROM users WHERE id = :id";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(":id", $id);
+		$stmt->execute();
+
+
+		$sql = "DELETE FROM payments WHERE realID = :id";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(":id", $id);
+		$stmt->execute();
+
+		$sql = "DELETE FROM pregeneration WHERE realID = :id";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(":id", $id);
+		$stmt->execute();
+
+		$sql = "DELETE FROM subscriptions WHERE realID = :id";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(":id", $id);
+		$stmt->execute();
+
+		return "ERR_OK";
+
+	}
+
+	public function regenerateAPIKey($id) {
+		$api_key = $this->generateAPIKey();
+
+		$db = $this->getDB();	
+		$sql = "UPDATE users SET api_key = :api_key WHERE id = :id";
+		$stmt = $db->prepare($sql);
+		$stmt->bindParam(":api_key", $api_key);
+		$stmt->bindParam(":id", $id);
+		$stmt->execute();
+
+		return "ERR_OK";
+
+	}
+
 	//for devs storing payment invoices, compensate for price changes 
-	public function updatePriceForAddress($address, $verification, $realID) {	
+	public function updateAddress($address, $expiration, $verification, $realID) {	
 		$data = $this->getPaymentAccountValues($realID);
 
 		foreach ($data as $key => $value) {
@@ -733,12 +1100,13 @@ class IOTAPaymentGateway {
 					$price = $value_1["price"];
 					$verification_database = $value_1["verification"];
 					$done = $value_1["done"];
+					$currency = $value_1["currency"];
 					break;
 				}
 			}
 		}
 
-		if (!isset($price) or !isset($verification) or !isset($done)) {
+		if (!isset($price) or !isset($verification_database) or !isset($done)) {
 			return "ERR_NOT_FOUND";
 		}
 
@@ -746,7 +1114,11 @@ class IOTAPaymentGateway {
 			return "ERR_DISALLOWED";
 		}
 
-		$price_iota = $this->getIOTAPrice($price);
+		if ((int)$expiration > MAX_EXPIRATION or (int)$expiration < MIN_EXPIRATION or preg_match('#[^0-9]#',$expiration)) {
+			return "ERR_EXPIRATION_INVALID";
+		}
+
+		$price_iota = $this->convertCurrencyToIOTA($price, $currency);
 		if ($price_iota == "ERR_FATAL_3RD_PARTY") {
 			return "ERR_FATAL_3RD_PARTY";
 		}
@@ -755,14 +1127,15 @@ class IOTAPaymentGateway {
 
 		//now update price
 		$db = $this->getDB();	
-		$sql = "UPDATE payments SET price_iota = :price_iota, created = :created WHERE address = :address";
+		$sql = "UPDATE payments SET price_iota = :price_iota, created = :created, expiration = :expiration WHERE address = :address";
 		$stmt = $db->prepare($sql);
 		$stmt->bindParam(":price_iota", $price_iota);
 		$stmt->bindParam(":created", $created);
 		$stmt->bindParam(":address", $address);
+		$stmt->bindParam(":expiration", $expiration);
 		$stmt->execute();
 
-		$this->logEvent("ERR_OK", "Updated price for address ".$address." to ".$price_iota." and created to ".$created." for US dollar ".$price);
+		$this->logEvent("ERR_OK", "Updated price for address ".$address." to ".$price_iota.", created to ".$created." and expiration to ".$expiration." for US dollar ".$price);
 		return $price_iota;
 
 	}
@@ -811,46 +1184,49 @@ class IOTAPaymentGateway {
 
 	}
 
-	public function addPaymentToServer($realID, $price, $custom, $ipn_url) {
+	public function addPaymentToServer($realID, $price, $currency, $expiration, $custom, $ipn_url) {
+		//get user data
 		$data = $this->getAccountValues($realID);
 		$seed = $data["seed"];
 		$verification = $data["verification"];
 
-		if ($ipn_url == "" or filter_var($ipn_url, FILTER_VALIDATE_URL) == false) {
-			//use default IPN url
-			$ipn_url = $data["ipn_url"];
+		if (!is_numeric($price)) {
+			return "ERR_PRICE_INVALID";
+		}
+
+		if (empty($custom)) {
+			return "ERR_CUSTOM_INVALID";
+		}
+
+
+		$price_iota = $this->convertCurrencyToIOTA($price, $currency);
+
+		if ($price_iota == "ERR_FATAL_3RD_PARTY" or $price_iota == "ERR_CURRENCY_INVALID") {
+			return $price_iota;
+		}
+
+
+		if (filter_var($ipn_url, FILTER_VALIDATE_URL) == false) {
+			return "ERR_IPN_URL_INVALID";
 		} 
 
-		//no default IPN url was set and no custom IPN url was specified
-		if ($ipn_url == "") {
-			echo "ERR_IPN_URL_INVALID";
-			die(1);
+		if ((int)$expiration > MAX_EXPIRATION or (int)$expiration < MIN_EXPIRATION or preg_match('#[^0-9]#',$expiration)) {
+			return "ERR_EXPIRATION_INVALID";
 		}
+		$expiration = (int)$expiration;
 
 		$count = $this->countInvoicesByID($realID);
 		
-		//old system
-		//$address = $this->getNewAddress($seed, $count + 1);
-		//$address = $this->getNewAddress($seed, $count);
-		
 		$address = $this->provideNewAddress($realID, $seed, $count);
-
 		if ($address == "ERR_FATAL_3RD_PARTY") {
-			return "ERR_FATAL_3RD_PARTY";
+			return $address;
 		}
-
-		$price_iota = $this->getIOTAPrice($price);
-		if ($price_iota == "ERR_FATAL_3RD_PARTY") {
-			return "ERR_FATAL_3RD_PARTY";
-		}
-
-		$this->incrementInvoiceCount($realID, $count); 
 
 		$done = 0;
 		$created = time();
 
 		$db = $this->getDB();
-		$sql = "INSERT INTO payments (realID, address, price, price_iota, custom, ipn_url, verification, done, created) VALUES (:id, :address, :price, :price_iota, :custom, :ipn_url, :verification, :done, :created)";
+		$sql = "INSERT INTO payments (realID, address, price, price_iota, custom, ipn_url, verification, done, created, expiration, currency) VALUES (:id, :address, :price, :price_iota, :custom, :ipn_url, :verification, :done, :created, :expiration, :currency)";
 		$stmt = $db->prepare($sql);
 		$stmt->bindParam(":id", $realID);
 		$stmt->bindParam(":address", $address);
@@ -861,7 +1237,11 @@ class IOTAPaymentGateway {
 		$stmt->bindParam(":verification", $verification);
 		$stmt->bindParam(":done", $done);
 		$stmt->bindParam(":created", $created);
+		$stmt->bindParam(":expiration", $expiration);
+		$stmt->bindParam(":currency", $currency);
 		$stmt->execute();
+
+		$this->incrementInvoiceCount($realID, $count); 
 
 		$this->logEvent("ERR_OK", "Generated new payment with ID ".$realID." with address ".$address." for price USD ".$price.", for price IOTA ".$price_iota." and IPN URL ".$ipn_url);
 		return json_encode(array($address, $price_iota));
@@ -926,6 +1306,7 @@ class IOTAPaymentGateway {
 	public function checkAddress($data) {
 		$address = $data["address"];
 		$price_iota = $data["price_iota"];
+		$expiration = $data["expiration"];
 
 		//check time (invoices can last a maximum of 1 week, unless renewed by updatePriceForAddress)
 		$created = (int)$data["created"];
@@ -933,8 +1314,8 @@ class IOTAPaymentGateway {
 
 		$difference = $current - $created;
 
-		if ($difference > 630427) {
-			return;
+		if ($difference > (int)$expiration) {
+			return "ERR_INVOICE_EXPIRED";
 		}
 	
 		$balance = $this->getAddressBalance($address);
@@ -973,27 +1354,10 @@ class IOTAPaymentGateway {
 
 	}
 
-	public function updateIPN($id, $ipn_url) {
-
-		if (filter_var($ipn_url, FILTER_VALIDATE_URL) == false) {
-			return "ERR_URL_NOT_VALID";
-		}
-
-		$db = $this->getDB();
-		$sql = "UPDATE users SET ipn_url = :ipn_url WHERE id = :id";
-		$stmt = $db->prepare($sql);
-		$stmt->bindParam(":ipn_url", $ipn_url);
-		$stmt->bindParam(":id", $id);
-		$stmt->execute();
-
-		return "ERR_IPN_OK";
-	}
-
-
 	public function sendIPN($data, $balance) {
 		$data["paid_iota"] = $balance;
 		$data["done"] = 1;
-		
+
 		$post_data = http_build_query($data);
 
 		$ch = curl_init();
@@ -1006,7 +1370,7 @@ class IOTAPaymentGateway {
 		curl_setopt($ch, CURLOPT_REFERER, 'https://payiota.me');
 		curl_setopt($ch, CURLOPT_USERAGENT, 'PayIOTA.me IPN'); 
 		$result = curl_exec($ch);
-
+		
 		curl_close($ch);
 
 		return "ERR_OK";
@@ -1068,7 +1432,7 @@ class Payments extends IOTAPaymentGateway {
 			print("Paid: ".$value["done"]);
 			if ($value["done"] == 0) {
 				print("<br><br>");
-				print("<a href='https://payiota.me/external.php?address=".$value["address"]."'>Pay Now using PayIOTA.me</a>");
+				print("<a href='https://payiota.me/external.php?address=".$value["address"]."&success_url=https://payiota.me/subscription.php?result=success&cancel_url=https://payiota.me/subscription.php?result=cancel'>Pay Now using PayIOTA.me</a>");
 				print("<br><br>");
 				if (isset($_GET["paypal"]) and $_GET["paypal"] == "true" and $_SESSION["paypalclear"] == false and isset($_GET["address"]) and $_GET["address"] == $value["address"]) {
 					$this->getPayPalAddress(PAYIOTA_SUBSCRIPTION_PRICE, $id, $value["address"]);
@@ -1091,15 +1455,15 @@ class Payments extends IOTAPaymentGateway {
 				print("<a href='https://iotasear.ch/hash/".$value["address"]."'>View Payment (if paid using PayIOTA.me)</a>");
 			}
 
-			if (isset($_GET["type"]) and $_GET["type"] == "paypal" and isset($_GET["result"]) and $_GET["result"] == "cancel") {
+			if (isset($_GET["result"]) and $_GET["result"] == "cancel") {
 				print("
 					<script>
-					alert('PayPal payment not accepted, please try again!');
+					alert('Payment not accepted, please try again!');
 					</script>");
-			} else if (isset($_GET["type"]) and $_GET["type"] == "paypal" and isset($_GET["result"]) and $_GET["result"] == "success") {
+			} else if (isset($_GET["result"]) and $_GET["result"] == "success") {
 				print("
 					<script>
-					alert('PayPal payment successfully accepted, your subscription will be updated soon!');
+					alert('Payment successfully accepted, your subscription will be updated soon!');
 					</script>");
 			}
 
@@ -1129,7 +1493,7 @@ class Payments extends IOTAPaymentGateway {
 		    "L_BUTTONVAR8" => "cancel_return=https://payiota.me/subscription.php?type=paypal&result=cancel",
 		    "L_BUTTONVAR9" => "return=https://payiota.me/subscription.php?type=paypal&result=success",
 		    "L_BUTTONVAR10" => "subtotal=".$price,
-		    "L_BUTTONVAR11" => "custom=".$id.":".$address.":".date('Y')
+		    "L_BUTTONVAR11" => "custom=".$id.":".$address.":".date('Y').":".PAYIOTA_VERIFICATION_KEY
 		);
 
 		$curl = curl_init();
@@ -1299,6 +1663,11 @@ class Payments extends IOTAPaymentGateway {
 	public function generateInvoiceForUser($id) {
 		$api = new IOTAPaymentGateway;
 
+		//check if ID is valid
+		if (is_null($id) or !is_numeric($id)) {
+			return "ERR_ID_INVALID";
+		}
+
 		//check if it already exists for this year
 		$db = $api->getDB();
 
@@ -1312,7 +1681,7 @@ class Payments extends IOTAPaymentGateway {
 		$date = key($stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC));
 		
 		if ($date == date('Y')) {
-				return;
+				return "ERR_ALREADY_EXISTS";
 		}
 
 		$date = date('Y');

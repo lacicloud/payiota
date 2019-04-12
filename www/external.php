@@ -9,6 +9,8 @@
 				 display: block; 
 				 margin: 0 auto;
 			}
+
+
 		</style>
 </head>
 <body>
@@ -21,6 +23,11 @@ if (!isset($_GET["lang"])) {
 	$language = "en";
 } else {
 	$language = $_GET["lang"];
+}
+
+if (!isset($_GET["cancel_url"]) or !isset($_GET["success_url"]) or !isset($_GET["address"])) {
+	echo "Error, cancel_url, success_url and address must be set!";
+	die(1);
 }
 
 //new system is fully compatible with legacy version
@@ -53,6 +60,9 @@ if (isset($_GET["address"])) {
 
 	echo "<p id='payment_waiting_message'>Waiting for payment!</p>";
 	echo "<p id='counter'></p>";
+	echo "<p style='float: left'><a href='".$_GET["cancel_url"]."'>Back to shop</a></p>";
+	
+	
 }
 
 
@@ -89,6 +99,7 @@ function checkPayment() {
 	  var success_url = $_GET.success_url;
 	  var cancel_url = $_GET.cancel_url;
 	  var created = obj["content"][0]["created"];
+	  var expiration = obj["content"][0]["expiration"];
 
 	  if (status == 1)  {
 	  	document.getElementById("payment_waiting_message").innerHTML = "<strong>Payment accepted! You are about to be redirected to " + success_url + "!</strong>";
@@ -101,14 +112,14 @@ function checkPayment() {
 		var difference = seconds - created;
 
 		//1 week currently
-		if (difference > 630427) {
+		if (difference > expiration) {
 			document.getElementById("payment_waiting_message").innerHTML = "<strong>Payment canceled due to time limit! You are about to be redirected to " + cancel_url + "!</strong>";
 			clearInterval(interval);
 			setTimeout(function () {redirectTo(cancel_url);}, 3000);
 		}
 
 		if (first_run) {
-			var countdown_seconds = (630427 - difference);
+			var countdown_seconds = (expiration - difference);
 			countdown(countdown_seconds);
 			first_run = false;
 		}

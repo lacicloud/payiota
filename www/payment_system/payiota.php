@@ -19,7 +19,7 @@ if (isset($_POST["address"]) and isset($_POST["custom"]) and isset($_POST["verif
 	$api_payments->updateInvoiceToPaid($address);
 
 	$email = $api->getAccountValues($custom[0])["email"];
-	$api->sendEmail($email, "PayIOTA.me - Thank You For Paying",  "<html><body><p>Hi there!</p><p>Your invoice for user ID ".$custom[0].", for year ".$custom[1]." has been paid for (price ".$price_iota." IOTA) with ".$paid_iota." IOTA and PayIOTA.me payment ID ".$address."! Your subscription is valid until next year.</p><p>Best Regards,<br>PayIOTA.me</p></body></html>");
+	$api->sendEmail($email, "PayIOTA.me - Thank You For Paying",  "<html><body><p>Hi there!</p><p>Your invoice for user ID ".$custom[0].", for year ".$custom[1]." has been paid for (price ".$price_iota." IOTA) with ".$paid_iota." IOTA! Your subscription is valid until next year.</p><p>Best Regards,<br>PayIOTA.me</p></body></html>");
 }
 
 

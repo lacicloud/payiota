@@ -28,20 +28,54 @@ if (!is_numeric($id)) {
 $data = $api->getAccountValues($id);
 $data_payment = $api->getPaymentAccountValues($id);
 $count = $api->countInvoicesByID($id);
+$seed = "*********************************************************************************";
+$hidden = true;
+
+if (isset($_POST["viewseed"]) and isset($_POST["password"])) {
+	
+	$db = $api->getDB();
+	$sql = "SELECT password FROM users WHERE id = :id";
+	$stmt = $db->prepare($sql);
+	$stmt->bindParam(":id", $id);
+	$stmt->execute();
+
+	$password = key(array_map('reset', $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC)));
+	$password_entered = $api->hashPassword($_POST["password"]);
+
+	if ($password == $password_entered) {
+		$seed = $data["seed"];
+		$hidden = false;
+	} else {
+		$result = "ERR_LOGIN_INCORRECT";
+		$hidden = true;
+	}
+
+}
+
 
 
 if (!isset($_SESSION["total_balance"]) or isset($_GET["refresh"])) {
 	$_SESSION["total_balance"] = $api->getAddressBalances($id);
 }
+
+if (isset($_GET["regenerate"])) {
+	$api->regenerateAPIKey($id);
+	header("Location: /interface.php?refresh=true");
+	die(0);
+}
+
+if (isset($_GET["delete"])) {
+	$api->deleteAccount($id);
+	header("Location: /account.php");
+	die(0);
+}
+
 $balance_array = $_SESSION["total_balance"];
 
 $total_balance = $balance_array[0];
 $detailed_balance = $balance_array[1];
 
-if (isset($_POST["ipn_url_new"])) {
-	$result = $api->updateIPN($id, $_POST["ipn_url_new"]);
-	$data = $api->getAccountValues($id);
-}
+
 
 ?>
 <!DOCTYPE html>
@@ -91,30 +125,21 @@ if (isset($_POST["ipn_url_new"])) {
 	<div class="api_list">
 		<table>
 		  <tr><td>ID:</td><td class="api_data"><?php echo $id;?></td></tr>
-		  <tr><td>IOTA seed:</td><td class="api_data"><?php echo $data["seed"];?></td></tr>
+		  <tr><td>IOTA seed:</td><td class="api_data"><?php echo $seed;?></td></tr>
 		  <tr><td>API key:</td><td class="api_data"><?php echo $data["api_key"];?></td></tr>
 		  <tr><td>Verification:</td><td class="api_data"><?php echo $data["verification"];?></td></tr>
-		  <tr><td>Your IPN URL:</td><td class="api_data">
-		  <?php if($data["ipn_url"]) { ?>
-			<a href="<?php echo htmlentities($data["ipn_url"]);?>"><?php echo htmlentities($data["ipn_url"]);?></a>
-		  <?php } else { ?>
-			<a class="no_ipn" href="#">No IPN URL Added</a>
-		  <?php } ?>
-		  </td></tr>
 		  <tr><td>Number of addresses:</td><td class="api_data"><?php echo $count;?></td></tr>
 		  <tr><td>Total balance:</td><td class="api_data"><?php echo $total_balance; ?> &nbsp (IOTA)</td></tr>
 		</table>
 
 		<a href="?refresh=true">Refresh Data</a>
+		<?php if ($hidden == true) { echo "<a onclick='return ViewSeed()' href='#'>View Seed</a>"; } else { echo "<a href='/interface.php'>Hide Seed</a>"; } ?>
+		<a href="?regenerate=true"  onclick='return ValidateAPIKeyRegeneration()'>Regenerate API Key</a>
 		<a href="?hide_empty=true">Hide Empty</a>
 		<a href="?hide_empty=false">Unhide Empty</a>
 		<a href="/subscription.php">Payment Manager</a>
+		<a href="?delete=true" onclick='return ValidateAccountDelete()'>Delete Account</a>
 
-		<h4>Update IPN URL:</h4>
-		<form action="#" method="POST" onsubmit="return ValidateURL(this);">
-			  <input required class="ipn_url_new" type="text" name="ipn_url_new" placeholder="New IPN URL Address"/>
-			  <input type="submit" value="Update IPN"></li>  
-		</form>
 	</div>
 </section>
 <!-- /.content-section-b -->
@@ -129,9 +154,11 @@ if (isset($_POST["ipn_url_new"])) {
     <tr>
       <th>API Call # and Invoice</th>
       <th>Address</th>
-      <th>Price (USD)</th>
+      <th>Price</th>
       <th>Price in IOTA</th>
       <th>Custom Variable</th>
+      <th>Created</th>
+       <th>Expiration</th>
       <th>Balance</th>
       <th>Status</th>
       <th>Paid</th>
@@ -163,9 +190,11 @@ if (isset($_POST["ipn_url_new"])) {
 		<tr>
 		  <th scope='row'><a href='https://payiota.me/external.php?address=".$value[0]["address"]."&success_url=/interface.php&cancel_url=/interface.php'>".$count."</a></th>
 		  <td><a href='https://iotasear.ch/hash/".$value[0]["address"]."' target='_blank'>".$value[0]["address"]."</a></td>
-		  <td><span>Price (USD)</span>		$".$value[0]["price"]."</td>
+		  <td><span>Price</span>		".$value[0]["price"]." (".$value[0]["currency"].")</td>
 		  <td><span>Price in IOTA</span>	".$value[0]["price_iota"]."</td>
 		  <td><span>Custom Variable</span>	".$value[0]["custom"]."</td>
+		  <td><span>Created</span>	".$value[0]["created"]."</td>
+		   <td><span>Expiration</span>	".$value[0]["expiration"]."</td>
 		  <td><span>Balance</span>			". $balance  ."</td>
 		  <td><span>Status</span>			". $status ."</td>
 		  <td><span>Paid</span>			".$value[0]["done"]."</td>
@@ -182,6 +211,10 @@ if (isset($_POST["ipn_url_new"])) {
 	var error = document.getElementsByClassName("error")[0];
 	var info = document.getElementsByClassName("info")[0];
 	var warning = document.getElementsByClassName("warning")[0];
+
+    if ( window.history.replaceState ) {
+        window.history.replaceState( null, null, window.location.href );
+    }
 
 	<?php 
 	if (isset($result)) {
