@@ -85,12 +85,6 @@ $api = new IOTAPaymentGateway;
               </a>
             </li>
             <li class="list-inline-item">
-              <a href="https://github.com/lacicloud/payiota" class="btn btn-secondary btn-lg">
-                <i class="fa fa-github fa-fw"></i>
-                <span class="network-name">Github</span>
-              </a>
-            </li>
-            <li class="list-inline-item">
               <a href="#" onClick="pluginSelectionPrompt();" class="btn btn-secondary btn-lg">
                 <i class="fa fa-shopping-cart fa-fw"></i>
                 <span class="network-name">E-Commerce plugins</span>
@@ -248,7 +242,8 @@ $api = new IOTAPaymentGateway;
             <a href="/humans.txt">Owners</a>
           </li>
         </ul>
-        <p class="copyright text-muted small">Copyright &copy; PayIOTA 2018. All Rights Reserved.</p>
+        <p class="copyright text-muted small">Copyright &copy; PayIOTA 2019. All Rights Reserved</p>
+        <p class="copyright text-muted small">Powered by <a href="https://coinlib.io">Coinlib.io</a></p>
         <p class="copyright text-muted small">Number of users: <?php echo $api->getNumberOfUsers(); ?> </p>
       </div>
     </footer>
